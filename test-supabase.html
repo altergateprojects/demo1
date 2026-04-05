@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Supabase Connection</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Supabase Connection Test</h1>
+    <button onclick="testConnection()">Test Connection</button>
+    <div id="result"></div>
+
+    <script>
+        const supabaseUrl = 'https://vakwehszjbnytpltwbhr.supabase.co'
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZha3dlaHN6amJueXRwbHR3YmhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMDIzMjIsImV4cCI6MjA5MDg3ODMyMn0.XedeDPxmyW901i0nOFkVq_TlXg9WVW83e0dAUW_Ggw8'
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
+        
+        async function testConnection() {
+            const resultDiv = document.getElementById('result')
+            resultDiv.innerHTML = 'Testing...'
+            
+            try {
+                // Test basic connection
+                const { data, error } = await supabase.from('standards').select('*').limit(1)
+                
+                if (error) {
+                    resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`
+                    console.error('Supabase error:', error)
+                } else {
+                    resultDiv.innerHTML = `<p style="color: green;">Connection successful! Found ${data.length} records</p>`
+                    console.log('Supabase data:', data)
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<p style="color: red;">Exception: ${err.message}</p>`
+                console.error('Exception:', err)
+            }
+        }
+        
+        // Test on page load
+        window.onload = testConnection
+    </script>
+</body>
+</html>
