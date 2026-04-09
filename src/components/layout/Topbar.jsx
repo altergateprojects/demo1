@@ -2,17 +2,26 @@ import React, { useState } from 'react'
 import useUIStore from '../../store/uiStore'
 import useAuthStore from '../../store/authStore'
 import useAlertStore from '../../store/alertStore'
+import { useAcademicYears } from '../../hooks/useCommon'
 
 const Topbar = () => {
-  const { setSidebarOpen, theme, setTheme, currentAcademicYear } = useUIStore()
+  const { setSidebarOpen, theme, setTheme, currentAcademicYear, setCurrentAcademicYear } = useUIStore()
   const { profile, signOut } = useAuthStore()
   const { criticalCount } = useAlertStore()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showThemeMenu, setShowThemeMenu] = useState(false)
+  const [showYearMenu, setShowYearMenu] = useState(false)
+  
+  const { data: academicYears } = useAcademicYears()
 
   const handleSignOut = async () => {
     await signOut()
     setShowUserMenu(false)
+  }
+  
+  const handleYearChange = (year) => {
+    setCurrentAcademicYear(year.id, year.year_label)
+    setShowYearMenu(false)
   }
 
   const themeOptions = [
@@ -45,11 +54,47 @@ const Topbar = () => {
 
       {/* Right side */}
       <div className="flex items-center space-x-4">
-        {/* Academic Year Badge */}
-        <div className="hidden sm:flex items-center">
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 dark:bg-primary-900/20 text-primary-800 dark:text-primary-200">
-            AY {currentAcademicYear}
-          </span>
+        {/* Academic Year Selector */}
+        <div className="hidden sm:flex items-center relative">
+          <button
+            onClick={() => setShowYearMenu(!showYearMenu)}
+            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 dark:bg-primary-900/20 text-primary-800 dark:text-primary-200 hover:bg-primary-200 dark:hover:bg-primary-900/30 transition-colors"
+          >
+            <span>AY {currentAcademicYear}</span>
+            <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          
+          {showYearMenu && academicYears && (
+            <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-md shadow-lg border border-slate-200 dark:border-slate-700 z-50">
+              <div className="py-1 max-h-64 overflow-y-auto">
+                {academicYears.map((year) => (
+                  <button
+                    key={year.id}
+                    onClick={() => handleYearChange(year)}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between ${
+                      year.year_label === currentAcademicYear
+                        ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20'
+                        : 'text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    <span>{year.year_label}</span>
+                    {year.is_current && (
+                      <span className="text-xs px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded">
+                        Current
+                      </span>
+                    )}
+                    {year.year_label === currentAcademicYear && (
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Notifications */}
@@ -166,12 +211,13 @@ const Topbar = () => {
       </div>
 
       {/* Click outside handlers */}
-      {(showUserMenu || showThemeMenu) && (
+      {(showUserMenu || showThemeMenu || showYearMenu) && (
         <div 
           className="fixed inset-0 z-40" 
           onClick={() => {
             setShowUserMenu(false)
             setShowThemeMenu(false)
+            setShowYearMenu(false)
           }}
         />
       )}

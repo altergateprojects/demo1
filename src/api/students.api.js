@@ -255,6 +255,26 @@ export const getStudentById = async (id) => {
     .single()
 
   if (error) throw error
+  
+  // Calculate previous years pending from student_year_snapshots
+  if (data) {
+    const { data: snapshots, error: snapshotsError } = await supabase
+      .from('student_year_snapshots')
+      .select('dues_carried_forward_paise')
+      .eq('student_id', id)
+    
+    if (!snapshotsError && snapshots && snapshots.length > 0) {
+      // Sum all dues_carried_forward_paise from snapshots (these are carried forward pending fees)
+      const previousYearsPending = snapshots.reduce((sum, snapshot) => {
+        return sum + (snapshot.dues_carried_forward_paise || 0)
+      }, 0)
+      
+      data.previous_years_pending_paise = previousYearsPending
+    } else {
+      data.previous_years_pending_paise = 0
+    }
+  }
+  
   return data
 }
 

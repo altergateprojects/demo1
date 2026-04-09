@@ -46,10 +46,26 @@ const useUIStore = create(
         }
       },
       
-      setCurrentAcademicYear: (yearId, yearLabel) => set({ 
-        currentAcademicYearId: yearId,
-        currentAcademicYear: yearLabel 
-      }),
+      setCurrentAcademicYear: (yearId, yearLabel) => {
+        console.log('📅 Setting academic year:', yearLabel, 'ID:', yearId)
+        set({ 
+          currentAcademicYearId: yearId,
+          currentAcademicYear: yearLabel 
+        })
+      },
+      
+      // Initialize from database
+      initializeAcademicYear: (yearId, yearLabel) => {
+        const current = get()
+        // Only update if not already set or if different
+        if (!current.currentAcademicYearId || current.currentAcademicYearId !== yearId) {
+          console.log('📅 Initializing academic year from database:', yearLabel)
+          set({
+            currentAcademicYearId: yearId,
+            currentAcademicYear: yearLabel
+          })
+        }
+      },
       
       setGlobalLoading: (loading) => set({ globalLoading: loading }),
       
@@ -89,7 +105,8 @@ const useUIStore = create(
       partialize: (state) => ({
         sidebarCollapsed: state.sidebarCollapsed,
         theme: state.theme,
-        currentAcademicYear: state.currentAcademicYear
+        currentAcademicYear: state.currentAcademicYear,
+        currentAcademicYearId: state.currentAcademicYearId
       })
     }
   )

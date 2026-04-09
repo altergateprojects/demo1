@@ -13,18 +13,13 @@ const useAuthStore = create((set, get) => ({
   // Actions
   initialize: async () => {
     try {
-      console.log('🔄 Initializing auth store...')
-      
       // Get initial session
       const { data: { session }, error } = await supabase.auth.getSession()
       
       if (error) {
-        console.error('❌ Error getting session:', error)
         set({ isLoading: false, isInitialized: true })
         return
       }
-
-      console.log('📋 Session status:', session ? 'Found session' : 'No session')
 
       if (session) {
         await get().setSession(session)
@@ -41,7 +36,6 @@ const useAuthStore = create((set, get) => ({
 
       // Listen for auth changes
       supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log('🔄 Auth state changed:', event)
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           await get().setSession(session)
         } else if (event === 'SIGNED_OUT') {
@@ -56,9 +50,8 @@ const useAuthStore = create((set, get) => ({
       })
 
       set({ isInitialized: true })
-      console.log('✅ Auth store initialized successfully')
     } catch (error) {
-      console.error('❌ Error initializing auth:', error)
+      console.error('Error initializing auth:', error)
       set({ isLoading: false, isInitialized: true })
     }
   },
@@ -76,8 +69,6 @@ const useAuthStore = create((set, get) => ({
     }
 
     try {
-      console.log('🔄 Setting session for user:', session.user.email)
-      
       // Fetch user profile with longer timeout and better error handling
       let profile = null
       try {
@@ -88,21 +79,19 @@ const useAuthStore = create((set, get) => ({
             .eq('id', session.user.id)
             .single(),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Profile query timeout')), 10000) // Increased to 10 seconds
+            setTimeout(() => reject(new Error('Profile query timeout')), 10000)
           )
         ])
 
         if (error) {
-          console.warn('⚠️ Error fetching profile:', error.message)
           // Try to create a basic profile if it doesn't exist
           if (error.code === 'PGRST116') { // No rows returned
-            console.log('🔄 Creating basic user profile...')
             const { data: newProfile, error: createError } = await supabase
               .from('user_profiles')
               .insert([{
                 id: session.user.id,
                 full_name: session.user.email?.split('@')[0] || 'User',
-                role: 'staff', // Default role
+                role: 'staff',
                 phone_number: null,
                 is_active: true
               }])
@@ -111,20 +100,14 @@ const useAuthStore = create((set, get) => ({
 
             if (!createError) {
               profile = newProfile
-              console.log('✅ Basic profile created successfully')
-            } else {
-              console.error('❌ Failed to create profile:', createError.message)
             }
           }
         } else {
           profile = data
         }
       } catch (profileError) {
-        console.warn('⚠️ Profile fetch failed:', profileError.message)
         // Continue without profile
       }
-
-      console.log('✅ Profile loaded:', profile.full_name, profile.role)
 
       // Update last login (don't wait for this)
       supabase
@@ -134,18 +117,17 @@ const useAuthStore = create((set, get) => ({
           last_login_ip: null
         })
         .eq('id', session.user.id)
-        .then(() => console.log('📝 Last login updated'))
-        .catch(err => console.warn('⚠️ Could not update last login:', err.message))
+        .then(() => {})
+        .catch(() => {})
 
       set({ 
         session, 
         user: session.user, 
         profile, 
-        role: profile.role, 
+        role: profile?.role, 
         isLoading: false 
       })
     } catch (error) {
-      console.error('❌ Error setting session:', error.message)
       // Still set the session even if profile fails
       set({ 
         session, 
@@ -159,21 +141,12 @@ const useAuthStore = create((set, get) => ({
 
   signIn: async (email, password) => {
     try {
-      console.log('Attempting to sign in with:', email)
-      console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL)
-      console.log('Supabase Key exists:', !!import.meta.env.VITE_SUPABASE_ANON_KEY)
-      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       })
 
-      if (error) {
-        console.error('Supabase auth error:', error)
-        throw error
-      }
-
-      console.log('Sign in successful:', data)
+      if (error) throw error
       return { success: true, data }
     } catch (error) {
       console.error('Sign in error:', error)

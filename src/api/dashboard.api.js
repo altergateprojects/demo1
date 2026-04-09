@@ -13,7 +13,9 @@ export const getDashboardSummary = async (academicYearId) => {
         negativePocketMoneyCount: 0,
         totalNegativePocketMoney: 0,
         feesCollected: 0,
-        criticalAlerts: 0
+        totalPendingDues: 0,
+        allYearsPendingFees: 0,
+        totalOutstanding: 0
       }
     }
 
@@ -24,7 +26,8 @@ export const getDashboardSummary = async (academicYearId) => {
       getPendingFeesSum(academicYearId),
       getNegativePocketMoneyStats(academicYearId),
       getFeesCollectedThisYear(academicYearId),
-      getCriticalAlertsCount()
+      getTotalPendingDues(),
+      getAllYearsPendingFees(academicYearId)
     ])
 
     const [
@@ -33,21 +36,28 @@ export const getDashboardSummary = async (academicYearId) => {
       pendingFeesResult,
       negativePocketResult,
       feesCollectedResult,
-      alertsResult
+      pendingDuesResult,
+      allYearsFeesResult
     ] = results
 
     const negativePocketStats = negativePocketResult.status === 'fulfilled' 
       ? negativePocketResult.value 
       : { count: 0, total: 0 }
 
+    const currentYearPendingFees = pendingFeesResult.status === 'fulfilled' ? pendingFeesResult.value : 0
+    const previousYearsFees = allYearsFeesResult.status === 'fulfilled' ? allYearsFeesResult.value : 0
+    const studentDues = pendingDuesResult.status === 'fulfilled' ? pendingDuesResult.value : 0
+
     const summary = {
       studentsCount: studentsResult.status === 'fulfilled' ? studentsResult.value : 0,
       teachersCount: teachersResult.status === 'fulfilled' ? teachersResult.value : 0,
-      pendingFeesSum: pendingFeesResult.status === 'fulfilled' ? pendingFeesResult.value : 0,
+      pendingFeesSum: currentYearPendingFees,
       negativePocketMoneyCount: negativePocketStats.count,
       totalNegativePocketMoney: negativePocketStats.total,
       feesCollected: feesCollectedResult.status === 'fulfilled' ? feesCollectedResult.value : 0,
-      criticalAlerts: alertsResult.status === 'fulfilled' ? alertsResult.value : 0
+      totalPendingDues: studentDues,
+      allYearsPendingFees: previousYearsFees,
+      totalOutstanding: currentYearPendingFees + previousYearsFees + studentDues
     }
 
     // Log any failed requests in development
@@ -60,7 +70,8 @@ export const getDashboardSummary = async (academicYearId) => {
             'getPendingFeesSum',
             'getNegativePocketMoneyStats',
             'getFeesCollectedThisYear',
-            'getCriticalAlertsCount'
+            'getTotalPendingDues',
+            'getAllYearsPendingFees'
           ]
           console.error(`❌ ${functionNames[index]} failed:`, result.reason)
         }
@@ -109,7 +120,7 @@ const getActiveTeachersCount = async () => {
 }
 
 /**
- * Get pending fees sum
+ * Get pending fees sum for CURRENT academic year only
  */
 const getPendingFeesSum = async (academicYearId) => {
   try {
@@ -130,6 +141,33 @@ const getPendingFeesSum = async (academicYearId) => {
     return pendingSum
   } catch (error) {
     console.error('❌ Error in getPendingFeesSum:', error)
+    return 0
+  }
+}
+
+/**
+ * Get pending fees sum from ALL previous years (excluding current year)
+ */
+const getAllYearsPendingFees = async (currentAcademicYearId) => {
+  try {
+    // Get pending fees from ALL years except current year
+    const { data, error } = await supabase
+      .from('students')
+      .select('annual_fee_paise, fee_paid_paise, academic_year_id')
+      .neq('academic_year_id', currentAcademicYearId)
+      .eq('status', 'active')
+      .eq('is_deleted', false)
+
+    if (error) throw error
+
+    const pendingSum = data.reduce((sum, student) => {
+      const pending = Math.max(0, student.annual_fee_paise - student.fee_paid_paise)
+      return sum + pending
+    }, 0)
+
+    return pendingSum
+  } catch (error) {
+    console.error('❌ Error in getAllYearsPendingFees:', error)
     return 0
   }
 }
@@ -209,6 +247,54 @@ const getCriticalAlertsCount = async () => {
     return criticalFeeStudents.length + (negativePocketCount || 0)
   } catch (error) {
     console.error('❌ Error in getCriticalAlertsCount:', error)
+    return 0
+  }
+}
+
+/**
+ * Get total pending dues from student_dues table (all years)
+ */
+const getTotalPendingDues = async () => {
+  try {
+    // Get ALL dues - your table doesn't have a status column
+    const { data, error } = await supabase
+      .from('student_dues')
+      .select('amount_paise, amount_paid_paise')
+
+    if (error) {
+      console.error('❌ Error fetching student dues:', error)
+      throw error
+    }
+
+    if (!data || data.length === 0) {
+      console.warn('⚠️ No student dues found in database')
+      return 0
+    }
+
+    // Calculate total remaining for all dues that aren't fully paid
+    const totalPending = data.reduce((sum, due) => {
+      const remaining = Math.max(0, due.amount_paise - (due.amount_paid_paise || 0))
+      // Only count if there's remaining amount (not fully paid)
+      if (remaining > 0) {
+        return sum + remaining
+      }
+      return sum
+    }, 0)
+
+    console.log('📊 Student Dues Debug:', {
+      totalDues: data.length,
+      totalPendingPaise: totalPending,
+      totalPendingRupees: (totalPending / 100).toFixed(2),
+      sampleDues: data.slice(0, 5).map(d => ({
+        amount: (d.amount_paise / 100).toFixed(2),
+        paid: ((d.amount_paid_paise || 0) / 100).toFixed(2),
+        remaining: (Math.max(0, d.amount_paise - (d.amount_paid_paise || 0)) / 100).toFixed(2)
+      }))
+    })
+
+    return totalPending
+  } catch (error) {
+    console.error('❌ Error in getTotalPendingDues:', error)
     return 0
   }
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useFeeConfigurations, useFeeStatistics, useSyncStudentFees } from '../../hooks/useFees'
 import { useCurrentAcademicYear } from '../../hooks/useCommon'
 import { formatINR } from '../../lib/formatters'
@@ -16,16 +16,7 @@ const FeesListPageNew = () => {
   const [showEditConfigModal, setShowEditConfigModal] = useState(false)
   const [selectedConfig, setSelectedConfig] = useState(null)
 
-  const { data: feeConfigs, isLoading: configsLoading, error: configsError } = useFeeConfigurations() // Show all years
-  
-  // Debug logging with expanded details
-  console.log('=== FEE CONFIGURATIONS DEBUG ===')
-  console.log('feeConfigs:', feeConfigs)
-  console.log('configsLoading:', configsLoading)
-  console.log('configsError:', configsError)
-  console.log('count:', feeConfigs?.length)
-  console.log('is array?:', Array.isArray(feeConfigs))
-  console.log('================================')
+  const { data: feeConfigs, isLoading: configsLoading } = useFeeConfigurations()
   const { data: feeStats, isLoading: statsLoading } = useFeeStatistics(currentYear?.id)
   const syncStudentFeesMutation = useSyncStudentFees()
 
@@ -49,6 +40,31 @@ const FeesListPageNew = () => {
       syncStudentFeesMutation.mutate(currentYear.id)
     }
   }
+
+  // Group configs by academic year and sort by standard - MEMOIZED for performance
+  const groupedConfigs = useMemo(() => {
+    if (!feeConfigs) return {}
+    
+    const grouped = feeConfigs.reduce((acc, config) => {
+      const yearLabel = config.academic_year?.year_label || 'Unknown'
+      if (!acc[yearLabel]) {
+        acc[yearLabel] = []
+      }
+      acc[yearLabel].push(config)
+      return acc
+    }, {})
+
+    // Sort each year's configs by standard sort_order
+    Object.keys(grouped).forEach(year => {
+      grouped[year].sort((a, b) => {
+        const orderA = a.standard?.sort_order || 0
+        const orderB = b.standard?.sort_order || 0
+        return orderA - orderB
+      })
+    })
+
+    return grouped
+  }, [feeConfigs])
 
   if (!currentYear) return <LoadingScreen />
 
@@ -319,42 +335,60 @@ const FeesListPageNew = () => {
               </Card>
             </div>
           ) : (
-            <div className="grid gap-4">
-              {feeConfigs.map((config) => (
-                <Card key={config.id} className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-4">
-                        <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">
-                          📚 Standard {config.standard?.name || 'Unknown'}
-                        </h3>
-                        <Badge variant="info">
-                          {config.academic_year?.year_label || 'Unknown Year'}
-                        </Badge>
-                        <Badge variant={config.gender === 'all' ? 'primary' : 'secondary'}>
-                          {config.gender === 'all' ? '👥 All Genders' : `👤 ${config.gender}`}
-                        </Badge>
-                        <Badge variant="success">
-                          {formatINR(config.annual_fee_paise)}
-                        </Badge>
-                      </div>
-                      {config.notes && (
-                        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-                          {config.notes}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => handleEditClick(config)}
-                      >
-                        Edit
-                      </Button>
-                    </div>
+            <div className="space-y-8">
+              {Object.entries(groupedConfigs).map(([yearLabel, configs]) => (
+                <div key={yearLabel}>
+                  {/* Year Divider */}
+                  <div className="mb-6">
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4 pb-2 border-b-2 border-blue-500">
+                      {yearLabel}
+                    </h3>
                   </div>
-                </Card>
+
+                  {/* 3 Column Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {configs.map((config) => (
+                      <Card key={config.id} className="p-6 hover:shadow-lg transition-shadow">
+                        <div className="space-y-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+                                {config.standard?.name || 'Unknown'}
+                              </h3>
+                              <div className="flex flex-wrap gap-2">
+                                <Badge variant={config.gender === 'all' ? 'primary' : 'secondary'}>
+                                  {config.gender === 'all' ? '👥 All Genders' : config.gender === 'male' ? '👨 Male' : '👩 Female'}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                            <p className="text-xs text-green-600 dark:text-green-400 font-medium mb-1">Annual Fee</p>
+                            <p className="text-2xl font-bold text-green-700 dark:text-green-300">
+                              {formatINR(config.annual_fee_paise)}
+                            </p>
+                          </div>
+
+                          {config.notes && (
+                            <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
+                              {config.notes}
+                            </p>
+                          )}
+
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleEditClick(config)}
+                            className="w-full"
+                          >
+                            Edit
+                          </Button>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           )}

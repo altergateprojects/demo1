@@ -6,15 +6,14 @@ import { supabase } from '../lib/supabase'
 export const getTeacherSalaryHistory = async (teacherId) => {
   const { data, error } = await supabase
     .from('teacher_salary_history')
-    .select(`
-      *,
-      academic_years(year_label),
-      user_profiles!teacher_salary_history_performed_by_fkey(full_name)
-    `)
+    .select('*')
     .eq('teacher_id', teacherId)
     .order('effective_date', { ascending: false })
 
-  if (error) throw error
+  if (error) {
+    console.error('Salary history error:', error)
+    throw error
+  }
   return data || []
 }
 
@@ -34,11 +33,7 @@ export const createSalaryHistory = async (salaryData) => {
   const { data, error } = await supabase
     .from('teacher_salary_history')
     .insert([salaryRecord])
-    .select(`
-      *,
-      teachers(full_name),
-      academic_years(year_label)
-    `)
+    .select('*')
     .single()
 
   if (error) throw error
@@ -48,9 +43,9 @@ export const createSalaryHistory = async (salaryData) => {
     actionType: 'CREATE',
     entityType: 'teacher_salary',
     entityId: data.id,
-    entityLabel: `${data.teachers.full_name} - Salary ${data.change_type}`,
+    entityLabel: `Salary ${data.change_type}`,
     newValue: data,
-    description: `Salary ${data.change_type} for ${data.teachers.full_name}: ₹${data.new_salary_paise / 100} (${data.change_reason || 'No reason provided'})`
+    description: `Salary ${data.change_type}: ₹${data.new_salary_paise / 100} (${data.change_reason || 'No reason provided'})`
   })
 
   return data
@@ -62,12 +57,7 @@ export const createSalaryHistory = async (salaryData) => {
 export const getTeacherBonuses = async (teacherId, academicYearId = null) => {
   let query = supabase
     .from('teacher_bonuses')
-    .select(`
-      *,
-      academic_years(year_label),
-      user_profiles!teacher_bonuses_performed_by_fkey(full_name),
-      approved_by_profile:user_profiles!teacher_bonuses_approved_by_fkey(full_name)
-    `)
+    .select('*')
     .eq('teacher_id', teacherId)
 
   if (academicYearId) {
@@ -99,11 +89,7 @@ export const createTeacherBonus = async (bonusData) => {
   const { data, error } = await supabase
     .from('teacher_bonuses')
     .insert([bonus])
-    .select(`
-      *,
-      teachers(full_name),
-      academic_years(year_label)
-    `)
+    .select('*')
     .single()
 
   if (error) throw error
@@ -113,9 +99,9 @@ export const createTeacherBonus = async (bonusData) => {
     actionType: 'CREATE',
     entityType: 'teacher_bonus',
     entityId: data.id,
-    entityLabel: `${data.teachers.full_name} - ${data.bonus_type} bonus`,
+    entityLabel: `${data.bonus_type} bonus`,
     newValue: data,
-    description: `${data.bonus_type} bonus of ₹${data.amount_paise / 100} for ${data.teachers.full_name}: ${data.reason}`
+    description: `${data.bonus_type} bonus of ₹${data.amount_paise / 100}: ${data.reason}`
   })
 
   return data
@@ -132,10 +118,7 @@ export const updateTeacherBonus = async (bonusId, updates) => {
       updated_at: new Date().toISOString()
     })
     .eq('id', bonusId)
-    .select(`
-      *,
-      teachers(full_name)
-    `)
+    .select('*')
     .single()
 
   if (error) throw error
@@ -145,9 +128,9 @@ export const updateTeacherBonus = async (bonusId, updates) => {
     actionType: 'UPDATE',
     entityType: 'teacher_bonus',
     entityId: data.id,
-    entityLabel: `${data.teachers.full_name} - ${data.bonus_type} bonus`,
+    entityLabel: `${data.bonus_type} bonus`,
     newValue: data,
-    description: `Updated ${data.bonus_type} bonus for ${data.teachers.full_name}`
+    description: `Updated ${data.bonus_type} bonus`
   })
 
   return data
@@ -159,11 +142,7 @@ export const updateTeacherBonus = async (bonusId, updates) => {
 export const getTeacherSalaryPayments = async (teacherId, academicYearId = null) => {
   let query = supabase
     .from('teacher_salary_payments')
-    .select(`
-      *,
-      academic_years(year_label),
-      user_profiles!teacher_salary_payments_performed_by_fkey(full_name)
-    `)
+    .select('*')
     .eq('teacher_id', teacherId)
 
   if (academicYearId) {
@@ -179,14 +158,46 @@ export const getTeacherSalaryPayments = async (teacherId, academicYearId = null)
 }
 
 /**
+ * Get all salary payments for a specific month
+ */
+export const getSalaryPaymentsByMonth = async (month) => {
+  const { data, error } = await supabase
+    .from('teacher_salary_payments')
+    .select(`
+      *,
+      teachers(id, full_name, subject, current_salary_paise)
+    `)
+    .eq('salary_month', month + '-01')
+    .eq('status', 'paid')
+
+  if (error) throw error
+  return data || []
+}
+
+/**
  * Create salary payment record
  */
 export const createSalaryPayment = async (paymentData) => {
   const user = (await supabase.auth.getUser()).data.user
   const academicYear = await getCurrentAcademicYear()
 
+  // Determine status based on whether it's a partial payment
+  const status = paymentData.is_partial_payment ? 'partial' : 'paid'
+
+  // Your table only has: base_salary_paise, bonus_amount_paise, deduction_amount_paise, total_amount_paise
+  // So we need to simplify the data structure
   const payment = {
-    ...paymentData,
+    teacher_id: paymentData.teacher_id,
+    salary_month: paymentData.salary_month,
+    payment_date: paymentData.payment_date,
+    payment_method: paymentData.payment_method,
+    reference_number: paymentData.reference_number || null,
+    base_salary_paise: paymentData.base_salary_paise || 0,
+    bonus_amount_paise: paymentData.bonus_amount_paise || 0,
+    deduction_amount_paise: paymentData.deduction_amount_paise || 0,
+    total_amount_paise: paymentData.total_amount_paise || 0,
+    notes: paymentData.notes || null,
+    status: status,
     academic_year_id: academicYear.id,
     performed_by: user.id
   }
@@ -194,11 +205,7 @@ export const createSalaryPayment = async (paymentData) => {
   const { data, error } = await supabase
     .from('teacher_salary_payments')
     .insert([payment])
-    .select(`
-      *,
-      teachers(full_name),
-      academic_years(year_label)
-    `)
+    .select('*')
     .single()
 
   if (error) throw error
@@ -208,9 +215,9 @@ export const createSalaryPayment = async (paymentData) => {
     actionType: 'CREATE',
     entityType: 'teacher_salary_payment',
     entityId: data.id,
-    entityLabel: `${data.teachers.full_name} - Salary Payment`,
+    entityLabel: `Salary Payment`,
     newValue: data,
-    description: `Salary payment of ₹${data.total_amount_paise / 100} for ${data.teachers.full_name} (${new Date(data.salary_month).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })})`
+    description: `${status === 'partial' ? 'Partial salary' : 'Salary'} payment of ₹${data.total_amount_paise / 100} (${new Date(data.salary_month).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })})`
   })
 
   return data

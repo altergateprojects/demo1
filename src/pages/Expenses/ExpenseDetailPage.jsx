@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useExpense } from '../../hooks/useExpenses'
 import { getExpenseAttachments, getExpenseAuditTrail } from '../../api/expenses.api'
+import { supabase } from '../../lib/supabase'
 import { formatINR, formatDate } from '../../lib/formatters'
 import { EXPENSE_CATEGORIES } from '../../api/expenses.api'
 import Button from '../../components/ui/Button'
@@ -20,6 +21,7 @@ const ExpenseDetailPage = () => {
   const [showAuditTrail, setShowAuditTrail] = useState(false)
   const [loadingAttachments, setLoadingAttachments] = useState(false)
   const [loadingAudit, setLoadingAudit] = useState(false)
+  const [previewAttachment, setPreviewAttachment] = useState(null)
 
   const loadAttachments = async () => {
     setLoadingAttachments(true)
@@ -240,27 +242,152 @@ const ExpenseDetailPage = () => {
           {attachments.length === 0 ? (
             <p className="text-slate-600 dark:text-slate-400">No attachments found.</p>
           ) : (
-            attachments.map((attachment) => (
-              <div key={attachment.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded">
-                <div>
-                  <div className="font-medium">{attachment.file_name}</div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">
-                    {(attachment.file_size / 1024).toFixed(1)} KB • {attachment.file_type}
+            attachments.map((attachment) => {
+              const isImage = attachment.file_type?.startsWith('image/')
+              const isPDF = attachment.file_type === 'application/pdf'
+              
+              return (
+                <div key={attachment.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded">
+                  <div className="flex-1">
+                    <div className="font-medium">{attachment.file_name}</div>
+                    <div className="text-sm text-slate-600 dark:text-slate-400">
+                      {(attachment.file_size / 1024).toFixed(1)} KB • {attachment.file_type}
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                      Hash: {attachment.file_hash?.substring(0, 16)}...
+                    </div>
                   </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-                    Hash: {attachment.file_hash?.substring(0, 16)}...
+                  <div className="flex space-x-2">
+                    <Button
+                      onClick={async () => {
+                        try {
+                          const { data, error } = supabase.storage
+                            .from('expense-attachments')
+                            .getPublicUrl(attachment.storage_path)
+                          
+                          if (error) {
+                            alert('❌ Storage bucket not found. Please run fix-bucket-make-public.sql')
+                            return
+                          }
+                          
+                          if (data?.publicUrl) {
+                            setPreviewAttachment({
+                              ...attachment,
+                              url: data.publicUrl,
+                              isImage,
+                              isPDF
+                            })
+                          }
+                        } catch (err) {
+                          alert('❌ Error loading attachment')
+                        }
+                      }}
+                      size="sm"
+                      variant="primary"
+                    >
+                      {isImage ? '👁️ Preview' : '📄 View'}
+                    </Button>
+                    <Button
+                      onClick={async () => {
+                        try {
+                          const { data } = supabase.storage
+                            .from('expense-attachments')
+                            .getPublicUrl(attachment.storage_path)
+                          
+                          if (data?.publicUrl) {
+                            window.open(data.publicUrl, '_blank')
+                          }
+                        } catch (err) {
+                          alert('❌ Error opening attachment')
+                        }
+                      }}
+                      size="sm"
+                      variant="secondary"
+                    >
+                      ↗️
+                    </Button>
                   </div>
                 </div>
-                <Button
-                  onClick={() => window.open(attachment.storage_path, '_blank')}
-                  size="sm"
-                >
-                  View
-                </Button>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
+      </Modal>
+
+      {/* Attachment Preview Modal */}
+      <Modal
+        isOpen={!!previewAttachment}
+        onClose={() => setPreviewAttachment(null)}
+        title={previewAttachment?.file_name || 'Preview'}
+        size="xl"
+      >
+        {previewAttachment && (
+          <div className="space-y-4">
+            {previewAttachment.isImage ? (
+              <div className="flex justify-center bg-slate-100 dark:bg-slate-900 rounded-lg p-4">
+                <img
+                  src={previewAttachment.url}
+                  alt={previewAttachment.file_name}
+                  className="max-w-full max-h-[70vh] object-contain rounded"
+                  onError={(e) => {
+                    e.target.style.display = 'none'
+                    e.target.nextSibling.style.display = 'block'
+                  }}
+                />
+                <div style={{ display: 'none' }} className="text-center text-slate-600 dark:text-slate-400">
+                  <p>❌ Failed to load image</p>
+                  <p className="text-sm mt-2">The image may be corrupted or the bucket may not be public.</p>
+                </div>
+              </div>
+            ) : previewAttachment.isPDF ? (
+              <div className="w-full h-[70vh] bg-slate-100 dark:bg-slate-900 rounded-lg">
+                <iframe
+                  src={previewAttachment.url}
+                  className="w-full h-full rounded-lg"
+                  title={previewAttachment.file_name}
+                />
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-slate-600 dark:text-slate-400 mb-4">
+                  Preview not available for this file type
+                </p>
+                <Button
+                  onClick={() => window.open(previewAttachment.url, '_blank')}
+                >
+                  Open in New Tab
+                </Button>
+              </div>
+            )}
+            
+            <div className="flex justify-between items-center pt-4 border-t border-slate-200 dark:border-slate-700">
+              <div className="text-sm text-slate-600 dark:text-slate-400">
+                {(previewAttachment.file_size / 1024).toFixed(1)} KB • {previewAttachment.file_type}
+              </div>
+              <div className="flex space-x-2">
+                <Button
+                  onClick={() => window.open(previewAttachment.url, '_blank')}
+                  variant="secondary"
+                  size="sm"
+                >
+                  Open in New Tab ↗️
+                </Button>
+                <Button
+                  onClick={() => {
+                    const link = document.createElement('a')
+                    link.href = previewAttachment.url
+                    link.download = previewAttachment.file_name
+                    link.click()
+                  }}
+                  variant="secondary"
+                  size="sm"
+                >
+                  Download 📥
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Audit Trail Modal */}

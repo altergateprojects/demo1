@@ -3,13 +3,31 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useCreateExpense } from '../../hooks/useExpenses'
-import { useCurrentAcademicYear } from '../../hooks/useCommon'
+import { useCurrentAcademicYear, useAcademicYears } from '../../hooks/useCommon'
 import { EXPENSE_CATEGORIES } from '../../api/expenses.api'
 import Modal from '../ui/Modal'
 import CurrencyInput from '../ui/CurrencyInput'
 import Button from '../ui/Button'
 import FileUpload from '../ui/FileUpload'
 import useAuthStore from '../../store/authStore'
+
+// Helper function to determine academic year from expense date
+const determineAcademicYearFromDate = async (expenseDate, academicYears) => {
+  // Find the academic year that contains this expense date
+  const matchingYear = academicYears.find(year => {
+    const startDate = new Date(year.start_date)
+    const endDate = new Date(year.end_date)
+    return expenseDate >= startDate && expenseDate <= endDate
+  })
+  
+  if (matchingYear) {
+    return matchingYear.id
+  }
+  
+  // If no match found, return the current year as fallback
+  const currentYear = academicYears.find(y => y.is_current)
+  return currentYear?.id || academicYears[0]?.id
+}
 
 const expenseSchema = z.object({
   expense_date: z.string().min(1, 'Expense date is required'),
@@ -30,6 +48,7 @@ const expenseSchema = z.object({
 const AddExpenseModal = ({ isOpen, onClose }) => {
   const { user } = useAuthStore()
   const { data: currentYear } = useCurrentAcademicYear()
+  const { data: academicYears } = useAcademicYears()
   const createExpenseMutation = useCreateExpense()
   const [uploadedFiles, setUploadedFiles] = useState([])
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -89,9 +108,14 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
         .then(data => data.ip)
         .catch(() => 'unknown')
 
+      // Determine academic year based on expense_date (not current year!)
+      // This ensures expenses stay in the correct year even when current year changes
+      const expenseDate = new Date(data.expense_date)
+      const academicYearId = determineAcademicYearFromDate(expenseDate, academicYears || [])
+
       // Create expense with fraud-proof data structure
       const expenseData = {
-        academic_year_id: currentYear.id,
+        academic_year_id: academicYearId,
         expense_date: data.expense_date,
         category: data.category,
         sub_category: data.sub_category || null,

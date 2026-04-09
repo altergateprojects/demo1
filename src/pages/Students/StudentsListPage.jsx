@@ -4,7 +4,7 @@ import useAuthStore from '../../store/authStore'
 import useUIStore from '../../store/uiStore'
 import RoleGate from '../../components/shared/RoleGate'
 import { useStudents } from '../../hooks/useStudents'
-import { useStandards, useCurrentAcademicYear } from '../../hooks/useCommon'
+import { useStandards, useCurrentAcademicYear, useAcademicYears } from '../../hooks/useCommon'
 import { formatINR, formatDate } from '../../lib/formatters'
 import { STUDENT_STATUS } from '../../lib/constants'
 import Skeleton from '../../components/ui/Skeleton'
@@ -21,6 +21,7 @@ const StudentsListPage = () => {
     page: 1,
     limit: 25,
     search: '',
+    academicYearId: '', // Add academic year filter
     standardId: '',
     status: '',
     gender: '',
@@ -32,7 +33,8 @@ const StudentsListPage = () => {
 
   // Get current academic year if not set in UI store
   const { data: currentYear } = useCurrentAcademicYear()
-  const academicYearId = currentAcademicYearId || currentYear?.id
+  const { data: academicYears } = useAcademicYears()
+  const academicYearId = filters.academicYearId || currentAcademicYearId || currentYear?.id
 
   // Fetch data
   const { data: studentsData, isLoading, error } = useStudents({
@@ -283,6 +285,24 @@ const StudentsListPage = () => {
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Academic Year
+            </label>
+            <select
+              className="input-field"
+              value={filters.academicYearId}
+              onChange={(e) => handleFilterChange('academicYearId', e.target.value)}
+            >
+              <option value="">Current Year</option>
+              {academicYears?.map((year) => (
+                <option key={year.id} value={year.id}>
+                  {year.year_label} {year.is_current ? '(Current)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               Standard
             </label>
             <select
@@ -337,6 +357,7 @@ const StudentsListPage = () => {
                 page: 1,
                 limit: 25,
                 search: '',
+                academicYearId: '',
                 standardId: '',
                 status: '',
                 gender: '',

@@ -7,6 +7,9 @@ import { Toaster } from 'react-hot-toast'
 import useAuthStore from './store/authStore'
 import useUIStore from './store/uiStore'
 
+// Hooks
+import { useCurrentAcademicYear } from './hooks/useCommon'
+
 // Components
 import AuthGuard from './components/shared/AuthGuard'
 import Layout from './components/layout/Layout'
@@ -20,6 +23,7 @@ import StudentDetailPage from './pages/Students/StudentDetailPage'
 import AddStudentPage from './pages/Students/AddStudentPage'
 import EditStudentPage from './pages/Students/EditStudentPage'
 import StudentDuesPage from './pages/Students/StudentDuesPage'
+import StudentPromotionPage from './pages/Students/StudentPromotionPage'
 import TeachersListPage from './pages/Teachers/TeachersListPage'
 import TeacherDetailPage from './pages/Teachers/TeacherDetailPage'
 import AddTeacherPage from './pages/Teachers/AddTeacherPage'
@@ -30,21 +34,39 @@ import ExpenseDetailPage from './pages/Expenses/ExpenseDetailPage'
 import EditExpensePage from './pages/Expenses/EditExpensePage'
 import ExpenseAuditPage from './pages/Expenses/ExpenseAuditPage'
 import ReportsPage from './pages/Reports/ReportsPage'
+import SalaryManagementPage from './pages/Salary/SalaryManagementPage'
 
-// Create a client
+// Create a client with balanced settings - fast for most pages, dynamic for dashboard
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 3,
-      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      cacheTime: 10 * 60 * 1000, // 10 minutes
+      retry: 1, // Reduced from 3
+      retryDelay: 1000, // Fixed delay
+      staleTime: 30 * 1000, // 30 seconds - data stays fresh
+      cacheTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: false, // Disabled globally (enabled per-query for dashboard)
+      refetchOnMount: false, // Disabled globally (enabled per-query for dashboard)
+      refetchOnReconnect: false, // Prevent refetch on reconnect
     },
     mutations: {
-      retry: 1,
+      retry: 0, // Don't retry mutations
     },
   },
 })
+
+// Academic Year Initializer Component
+const AcademicYearInitializer = ({ children }) => {
+  const { initializeAcademicYear } = useUIStore()
+  const { data: currentYear } = useCurrentAcademicYear()
+  
+  useEffect(() => {
+    if (currentYear) {
+      initializeAcademicYear(currentYear.id, currentYear.year_label)
+    }
+  }, [currentYear, initializeAcademicYear])
+  
+  return children
+}
 
 function App() {
   const { initialize, isLoading, isInitialized, session } = useAuthStore()
@@ -65,31 +87,33 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-          <Routes>
-            {/* Public routes */}
-            <Route 
-              path="/login" 
-              element={
-                session ? <Navigate to="/dashboard" replace /> : <LoginPage />
-              } 
-            />
-            
-            {/* Protected routes */}
-            <Route path="/*" element={
-              <AuthGuard>
-                <Layout>
-                  <Routes>
-                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                    <Route path="/dashboard" element={<DashboardPage />} />
-                    
-                    {/* Students routes */}
-                    <Route path="/students" element={<StudentsListPage />} />
-                    <Route path="/students/add" element={<AddStudentPage />} />
-                    <Route path="/students/dues" element={<StudentDuesPage />} />
-                    <Route path="/students/:id" element={<StudentDetailPage />} />
-                    <Route path="/students/:id/edit" element={<EditStudentPage />} />
+      <AcademicYearInitializer>
+        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+            <Routes>
+              {/* Public routes */}
+              <Route 
+                path="/login" 
+                element={
+                  session ? <Navigate to="/dashboard" replace /> : <LoginPage />
+                } 
+              />
+              
+              {/* Protected routes */}
+              <Route path="/*" element={
+                <AuthGuard>
+                  <Layout>
+                    <Routes>
+                      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                      <Route path="/dashboard" element={<DashboardPage />} />
+                      
+                      {/* Students routes */}
+                      <Route path="/students" element={<StudentsListPage />} />
+                      <Route path="/students/add" element={<AddStudentPage />} />
+                      <Route path="/students/dues" element={<StudentDuesPage />} />
+                      <Route path="/students/promotion" element={<StudentPromotionPage />} />
+                      <Route path="/students/:id" element={<StudentDetailPage />} />
+                      <Route path="/students/:id/edit" element={<EditStudentPage />} />
                     
                     {/* Teachers routes */}
                     <Route path="/teachers" element={<TeachersListPage />} />
@@ -107,7 +131,7 @@ function App() {
                     <Route path="/expenses/:id/audit" element={<ExpenseAuditPage />} />
                     
                     {/* Salary routes */}
-                    <Route path="/salary" element={<div>Salary - Coming Soon</div>} />
+                    <Route path="/salary" element={<SalaryManagementPage />} />
                     
                     {/* Reports routes */}
                     <Route path="/reports" element={<ReportsPage />} />
@@ -148,6 +172,7 @@ function App() {
           }}
         />
       </Router>
+      </AcademicYearInitializer>
     </QueryClientProvider>
   )
 }

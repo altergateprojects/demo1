@@ -16,14 +16,14 @@ const teacherSchema = z.object({
   phone: z.string().min(10, 'Phone number must be at least 10 digits').optional().or(z.literal('')),
   subject: z.string().optional(),
   qualification: z.string().optional(),
-  experience_years: z.number().min(0, 'Experience cannot be negative').optional(),
+  experience_years: z.number().min(0, 'Experience cannot be negative').optional().nullable(),
   address: z.string().optional(),
   emergency_contact: z.string().optional(),
   emergency_phone: z.string().optional(),
   status: z.enum(['active', 'inactive']),
   notes: z.string().optional(),
   // Salary fields
-  current_salary_paise: z.number().min(0, 'Salary cannot be negative'),
+  current_salary_paise: z.number().min(0, 'Salary cannot be negative').optional().nullable(),
   salary_effective_date: z.string().optional(),
   salary_notes: z.string().optional()
 })
@@ -61,17 +61,23 @@ const AddTeacherPage = () => {
       // Create teacher first
       const teacher = await createTeacherMutation.mutateAsync(cleanData)
       
-      // If salary is provided, create initial salary history record
+      // If salary is provided, try to create initial salary history record
+      // This is optional and won't block teacher creation if it fails
       if (cleanData.current_salary_paise > 0) {
-        await createSalaryHistoryMutation.mutateAsync({
-          teacher_id: teacher.id,
-          old_salary_paise: null,
-          new_salary_paise: cleanData.current_salary_paise,
-          effective_date: cleanData.salary_effective_date || new Date().toISOString().split('T')[0],
-          change_reason: 'Initial salary assignment',
-          change_type: 'initial',
-          notes: cleanData.salary_notes || 'Initial salary set during teacher creation'
-        })
+        try {
+          await createSalaryHistoryMutation.mutateAsync({
+            teacher_id: teacher.id,
+            old_salary_paise: null,
+            new_salary_paise: cleanData.current_salary_paise,
+            effective_date: cleanData.salary_effective_date || new Date().toISOString().split('T')[0],
+            change_reason: 'Initial salary assignment',
+            change_type: 'initial',
+            notes: cleanData.salary_notes || 'Initial salary set during teacher creation'
+          })
+        } catch (salaryError) {
+          console.warn('Could not create salary history:', salaryError)
+          // Continue anyway - teacher was created successfully
+        }
       }
       
       navigate('/teachers')
@@ -172,11 +178,10 @@ const AddTeacherPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <CurrencyInput
                 label="Monthly Salary"
-                required
-                value={watchedSalary}
+                value={watchedSalary || 0}
                 onChange={(value) => setValue('current_salary_paise', value)}
                 error={errors.current_salary_paise?.message}
-                helperText="Enter the monthly salary amount"
+                helperText="Enter the monthly salary amount (optional)"
               />
 
               <Input

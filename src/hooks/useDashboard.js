@@ -7,39 +7,45 @@ import {
 } from '../api/dashboard.api'
 
 /**
- * Hook to get dashboard summary
+ * Hook to get dashboard summary - Auto-refreshes on window focus
  */
 export const useDashboardSummary = (academicYearId) => {
   return useQuery({
     queryKey: ['dashboard', 'summary', academicYearId],
     queryFn: () => getDashboardSummary(academicYearId),
     enabled: !!academicYearId,
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+    staleTime: 0, // Always fetch fresh data
+    refetchOnWindowFocus: true, // Refetch when returning to dashboard
+    refetchOnMount: true, // Always refetch on mount
+    refetchInterval: 30 * 1000, // Auto-refresh every 30 seconds
   })
 }
 
 /**
- * Hook to get standard-wise fee summary
+ * Hook to get standard-wise fee summary - Auto-refreshes on window focus
  */
 export const useStandardFeeSummary = (academicYearId) => {
   return useQuery({
     queryKey: ['dashboard', 'standard-fee-summary', academicYearId],
     queryFn: () => getStandardFeeSummary(academicYearId),
     enabled: !!academicYearId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0, // Always fetch fresh data
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   })
 }
 
 /**
- * Hook to get recent activity
+ * Hook to get recent activity - Auto-refreshes frequently
  */
 export const useRecentActivity = (limit = 10) => {
   return useQuery({
     queryKey: ['dashboard', 'recent-activity', limit],
     queryFn: () => getRecentActivity(limit),
-    staleTime: 1 * 60 * 1000, // 1 minute
-    refetchInterval: 2 * 60 * 1000, // Refetch every 2 minutes
+    staleTime: 0, // Always fetch fresh data
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchInterval: 30 * 1000, // Auto-refresh every 30 seconds
   })
 }
 

@@ -1,6 +1,6 @@
 import React from 'react'
 
-const Select = ({ 
+const Select = React.forwardRef(({ 
   label, 
   error, 
   helperText,
@@ -9,7 +9,7 @@ const Select = ({
   className = '',
   required = false,
   ...props 
-}) => {
+}, ref) => {
   const selectClasses = `input-field ${error ? 'border-red-300 dark:border-red-600' : ''} ${className}`
   
   return (
@@ -21,6 +21,7 @@ const Select = ({
         </label>
       )}
       <select
+        ref={ref}
         className={selectClasses}
         {...props}
       >
@@ -43,6 +44,8 @@ const Select = ({
       )}
     </div>
   )
-}
+})
+
+Select.displayName = 'Select'
 
 export default Select

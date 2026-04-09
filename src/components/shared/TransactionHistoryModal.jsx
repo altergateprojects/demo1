@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useStudentFeeHistory } from '../../hooks/useStudents'
 import { usePocketMoneyHistory } from '../../hooks/usePocketMoney'
+import { useAcademicYears } from '../../hooks/useCommon'
 import { formatINR, formatDate } from '../../lib/formatters'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
@@ -16,8 +17,29 @@ const TransactionHistoryModal = ({
   
   const { data: feeHistory, isLoading: feeLoading } = useStudentFeeHistory(student?.id)
   const { data: pocketMoneyHistory, isLoading: pocketLoading } = usePocketMoneyHistory(student?.id)
+  const { data: academicYears } = useAcademicYears()
 
   if (!student) return null
+
+  // Helper function to determine which academic year a transaction belongs to
+  const getTransactionYear = (transactionDate) => {
+    if (!academicYears || !transactionDate) return null
+    
+    const txDate = new Date(transactionDate)
+    const matchingYear = academicYears.find(year => {
+      const startDate = new Date(year.start_date)
+      const endDate = new Date(year.end_date)
+      return txDate >= startDate && txDate <= endDate
+    })
+    
+    return matchingYear
+  }
+
+  // Get current academic year
+  const currentYear = useMemo(() => 
+    academicYears?.find(y => y.is_current),
+    [academicYears]
+  )
 
   const transactions = type === 'fee' ? feeHistory : pocketMoneyHistory
   const isLoading = type === 'fee' ? feeLoading : pocketLoading
@@ -162,6 +184,24 @@ const TransactionHistoryModal = ({
                           : formatDate(transaction.transaction_date || transaction.created_at)
                         }
                       </span>
+                      
+                      {/* Academic Year Badge */}
+                      {(() => {
+                        const txYear = getTransactionYear(
+                          type === 'fee' 
+                            ? (transaction.payment_date || transaction.created_at)
+                            : (transaction.transaction_date || transaction.created_at)
+                        )
+                        const isPreviousYear = txYear && currentYear && txYear.id !== currentYear.id
+                        
+                        return txYear && (
+                          <Badge variant={isPreviousYear ? 'warning' : 'default'}>
+                            {txYear.year_label}
+                            {isPreviousYear && ' (Previous)'}
+                          </Badge>
+                        )
+                      })()}
+                      
                       {type === 'fee' ? (
                         <Badge variant="blue">
                           {transaction.payment_method?.replace('_', ' ') || 'Cash'}

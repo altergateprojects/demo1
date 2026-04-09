@@ -5,7 +5,10 @@ export const getExpenses = async (filters = {}) => {
   try {
     let query = supabase
       .from('expenses')
-      .select('*')
+      .select(`
+        *,
+        attachment_count:expense_attachments(count)
+      `)
       .eq('is_deleted', false)
       .order('expense_date', { ascending: false })
 
@@ -44,7 +47,13 @@ export const getExpenses = async (filters = {}) => {
       throw error
     }
 
-    return data || []
+    // Transform the data to include attachment count
+    const transformedData = (data || []).map(expense => ({
+      ...expense,
+      attachmentCount: expense.attachment_count?.[0]?.count || 0
+    }))
+
+    return transformedData
   } catch (error) {
     console.error('Error getting expenses:', error)
     // Return empty array instead of throwing to prevent UI crashes

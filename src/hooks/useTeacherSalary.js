@@ -6,6 +6,7 @@ import {
   createTeacherBonus,
   updateTeacherBonus,
   getTeacherSalaryPayments,
+  getSalaryPaymentsByMonth,
   createSalaryPayment,
   getTeacherSalarySummary,
   getAllTeachersSalarySummary,
@@ -113,6 +114,18 @@ export const useTeacherSalaryPayments = (teacherId, academicYearId = null) => {
 }
 
 /**
+ * Hook to get all salary payments for a specific month
+ */
+export const useSalaryPaymentsByMonth = (month) => {
+  return useQuery({
+    queryKey: ['salary-payments-by-month', month],
+    queryFn: () => getSalaryPaymentsByMonth(month),
+    enabled: !!month,
+    staleTime: 5 * 60 * 1000
+  })
+}
+
+/**
  * Hook to create salary payment
  */
 export const useCreateSalaryPayment = () => {
@@ -122,7 +135,9 @@ export const useCreateSalaryPayment = () => {
     mutationFn: createSalaryPayment,
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['teacher-salary-payments'] })
+      queryClient.invalidateQueries({ queryKey: ['salary-payments-by-month'] })
       queryClient.invalidateQueries({ queryKey: ['teacher-salary-summary'] })
+      queryClient.invalidateQueries({ queryKey: ['teachers'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       toast.success('Salary payment recorded successfully!')
     },
