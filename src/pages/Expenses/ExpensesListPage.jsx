@@ -146,62 +146,64 @@ const ExpensesListPage = () => {
   return (
     <div className="space-y-6 pb-8">
       {/* Modern Header with Gradient */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-500 via-red-600 to-red-700 p-8 shadow-xl">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-500 via-red-600 to-red-700 p-6 sm:p-8 shadow-xl">
         <div className="absolute inset-0 bg-black/10"></div>
         <div className="relative z-10">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex-1">
               <div className="flex items-center space-x-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-                  <span className="text-2xl">💰</span>
+                <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+                  <span className="text-xl sm:text-2xl">💰</span>
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-white">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-white">
                     Expense Management
                   </h1>
-                  <p className="mt-1 text-red-100">
+                  <p className="mt-1 text-sm text-red-100">
                     Track and manage school expenses • {currentYear.year_label}
                   </p>
                 </div>
               </div>
             </div>
-            <div className="flex space-x-3">
-              <Button
+            <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
+              <button
                 onClick={() => setShowGraphModal(true)}
-                className="bg-white/10 backdrop-blur-sm text-white border border-white/20 hover:bg-white/20"
+                className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-white/10 backdrop-blur-sm text-white border border-white/20 hover:bg-white/20 rounded-lg font-medium transition-colors duration-200 text-sm"
               >
-                📊 Expense Graph
-              </Button>
-              <Button
+                <span className="hidden sm:inline">📊 Expense Graph</span>
+                <span className="sm:hidden">📊 Graph</span>
+              </button>
+              <button
                 onClick={() => setShowBorrowModal(true)}
-                className="bg-white/10 backdrop-blur-sm text-white border border-white/20 hover:bg-white/20"
+                className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-white/10 backdrop-blur-sm text-white border border-white/20 hover:bg-white/20 rounded-lg font-medium transition-colors duration-200 text-sm"
               >
-                💳 Borrow Capital
-              </Button>
-              <Button
+                <span className="hidden sm:inline">💳 Borrow Capital</span>
+                <span className="sm:hidden">💳 Borrow</span>
+              </button>
+              <button
                 onClick={() => setShowAddModal(true)}
-                className="bg-white text-red-600 hover:bg-red-50 shadow-lg hover:shadow-xl transition-all duration-200 font-semibold"
+                className="flex-1 sm:flex-none inline-flex items-center justify-center px-4 sm:px-6 py-2 bg-white text-red-600 hover:bg-red-50 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 font-semibold text-sm"
               >
-                <span className="mr-2">+</span> Add Expense
-              </Button>
+                + Add Expense
+              </button>
             </div>
           </div>
 
           {/* Stats Cards */}
-          <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <div className="rounded-xl bg-white/10 backdrop-blur-sm p-4 border border-white/20">
-              <div className="text-red-100 text-sm font-medium">Total Available Funds</div>
-              <div className="mt-1 text-2xl font-bold text-white">{formatINR(availableFunds)}</div>
+              <div className="text-red-100 text-xs sm:text-sm font-medium">Total Available Funds</div>
+              <div className="mt-1 text-xl sm:text-2xl font-bold text-white">{formatINR(availableFunds)}</div>
               <div className="mt-1 text-xs text-red-100">Fees + Pocket Money + Borrowed</div>
             </div>
             <div className="rounded-xl bg-white/10 backdrop-blur-sm p-4 border border-white/20">
-              <div className="text-red-100 text-sm font-medium">Total Expenses</div>
-              <div className="mt-1 text-2xl font-bold text-white">{formatINR(stats.total)}</div>
+              <div className="text-red-100 text-xs sm:text-sm font-medium">Total Expenses</div>
+              <div className="mt-1 text-xl sm:text-2xl font-bold text-white">{formatINR(stats.total)}</div>
               <div className="mt-1 text-xs text-red-100">{stats.count} transactions</div>
             </div>
-            <div className="rounded-xl bg-white/10 backdrop-blur-sm p-4 border border-white/20">
-              <div className="text-red-100 text-sm font-medium">Borrowed Capital</div>
-              <div className="mt-1 text-2xl font-bold text-white">{formatINR(borrowedCapital)}</div>
+            <div className="rounded-xl bg-white/10 backdrop-blur-sm p-4 border border-white/20 sm:col-span-2 lg:col-span-1">
+              <div className="text-red-100 text-xs sm:text-sm font-medium">Borrowed Capital</div>
+              <div className="mt-1 text-xl sm:text-2xl font-bold text-white">{formatINR(borrowedCapital)}</div>
               <div className="mt-1 text-xs text-red-100">Outstanding amount</div>
             </div>
           </div>
