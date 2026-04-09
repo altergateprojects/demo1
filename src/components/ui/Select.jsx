@@ -10,7 +10,8 @@ const Select = React.forwardRef(({
   required = false,
   ...props 
 }, ref) => {
-  const selectClasses = `input-field ${error ? 'border-red-300 dark:border-red-600' : ''} ${className}`
+  const hasValue = props.value && props.value !== ''
+  const selectClasses = `input-field ${error ? 'border-red-300 dark:border-red-600' : ''} ${!hasValue ? 'text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-slate-100'} ${className}`
   
   return (
     <div className="w-full">
@@ -25,9 +26,11 @@ const Select = React.forwardRef(({
         className={selectClasses}
         {...props}
       >
-        <option value="">{placeholder}</option>
+        <option value="" disabled={required} className="text-slate-500 dark:text-slate-400">
+          {placeholder}
+        </option>
         {options.map((option) => (
-          <option key={option.value} value={option.value}>
+          <option key={option.value} value={option.value} className="text-slate-900 dark:text-slate-100">
             {option.label}
           </option>
         ))}

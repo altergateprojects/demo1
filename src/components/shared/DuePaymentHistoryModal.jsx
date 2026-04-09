@@ -117,9 +117,22 @@ const DuePaymentHistoryModal = ({ isOpen, onClose, dueGroup, paymentHistory, isL
                           <p className="text-lg font-bold text-slate-900 dark:text-slate-100">
                             {formatINR(payment.payment_amount_paise)}
                           </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {formatDate(payment.payment_date)}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                              {formatDate(payment.payment_date)}
+                            </p>
+                            {payment.payment_type && (
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                payment.payment_type === 'fee_payment' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                                payment.payment_type === 'pocket_money' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
+                                'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                              }`}>
+                                {payment.payment_type === 'fee_payment' ? 'Fee Payment' :
+                                 payment.payment_type === 'pocket_money' ? 'Pocket Money' :
+                                 'Due Payment'}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -135,14 +148,14 @@ const DuePaymentHistoryModal = ({ isOpen, onClose, dueGroup, paymentHistory, isL
                         )}
                       </div>
 
-                      {payment.notes && (
+                      {(payment.notes || payment.description) && (
                         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 italic">
-                          "{payment.notes}"
+                          "{payment.notes || payment.description}"
                         </p>
                       )}
 
                       <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                        Recorded by: {payment.created_by_name || 'Unknown'}
+                        Recorded by: {payment.received_by_user?.full_name || payment.created_by_name || 'Unknown'}
                       </p>
                     </div>
                   </div>

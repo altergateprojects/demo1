@@ -34,6 +34,8 @@ const FeePaymentModal = ({
   const watchedAmount = watch('amount_paise')
 
   const pendingFee = student ? Math.max(0, student.annual_fee_paise - student.fee_paid_paise) : 0
+  const previousYearsPending = student?.previous_years_pending_paise || 0
+  const totalPendingFee = pendingFee + previousYearsPending
 
   const validateForm = (data) => {
     const errors = {}
@@ -114,7 +116,7 @@ const FeePaymentModal = ({
           <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-2">
             {student.full_name} - {student.standards?.name} ({student.roll_number})
           </h3>
-          <div className="grid grid-cols-3 gap-4 text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div>
               <span className="text-slate-600 dark:text-slate-400">Annual Fee:</span>
               <div className="font-medium text-slate-900 dark:text-slate-100">
@@ -122,18 +124,39 @@ const FeePaymentModal = ({
               </div>
             </div>
             <div>
-              <span className="text-slate-600 dark:text-slate-400">Paid so far:</span>
+              <span className="text-slate-600 dark:text-slate-400">Paid (Current):</span>
               <div className="font-medium text-green-600 dark:text-green-400">
                 {formatINR(student.fee_paid_paise)}
               </div>
             </div>
             <div>
-              <span className="text-slate-600 dark:text-slate-400">Pending:</span>
+              <span className="text-slate-600 dark:text-slate-400">Pending (Current):</span>
               <div className="font-medium text-red-600 dark:text-red-400">
                 {formatINR(pendingFee)}
               </div>
             </div>
+            {previousYearsPending > 0 && (
+              <div>
+                <span className="text-slate-600 dark:text-slate-400">Previous Years:</span>
+                <div className="font-medium text-orange-600 dark:text-orange-400">
+                  {formatINR(previousYearsPending)}
+                </div>
+              </div>
+            )}
           </div>
+          {totalPendingFee > pendingFee && (
+            <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Total Pending:</span>
+                <span className="text-lg font-bold text-red-600 dark:text-red-400">
+                  {formatINR(totalPendingFee)}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Payment will be applied to previous years debt first, then current year
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -143,7 +166,7 @@ const FeePaymentModal = ({
             value={watchedAmount}
             onChange={(value) => setValue('amount_paise', value)}
             error={validationErrors.amount_paise}
-            helperText={`Maximum: ${formatINR(pendingFee)}`}
+            helperText={`Maximum: ${formatINR(totalPendingFee)}${previousYearsPending > 0 ? ` (includes ₹${formatINR(previousYearsPending)} from previous years)` : ''}`}
           />
 
           {/* Payment Date */}
@@ -256,7 +279,7 @@ const FeePaymentModal = ({
         </div>
 
         {/* Amount Validation Warning */}
-        {watchedAmount > pendingFee && (
+        {watchedAmount > totalPendingFee && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
             <div className="flex">
               <div className="flex-shrink-0">
@@ -266,27 +289,51 @@ const FeePaymentModal = ({
               </div>
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
-                  Amount Exceeds Pending Fee
+                  Amount Exceeds Total Pending
                 </h3>
                 <p className="mt-1 text-sm text-red-700 dark:text-red-300">
-                  Payment amount {formatINR(watchedAmount)} exceeds pending fee of {formatINR(pendingFee)}.
-                  Maximum allowed: {formatINR(pendingFee)}.
+                  Payment amount {formatINR(watchedAmount)} exceeds total pending of {formatINR(totalPendingFee)}.
+                  {previousYearsPending > 0 && (
+                    <span className="block mt-1">
+                      (Current year: {formatINR(pendingFee)} + Previous years: {formatINR(previousYearsPending)})
+                    </span>
+                  )}
+                  Excess amount will be added to pocket money.
                 </p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Receipt Preview */}
-        {watchedAmount > 0 && watchedAmount <= pendingFee && (
+        {/* Payment Allocation Preview */}
+        {watchedAmount > 0 && watchedAmount <= totalPendingFee && previousYearsPending > 0 && (
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
+              Payment Allocation Preview
+            </h3>
+            <div className="space-y-1 text-sm text-blue-700 dark:text-blue-300">
+              {watchedAmount <= previousYearsPending ? (
+                <p>• {formatINR(watchedAmount)} will be applied to previous years debt</p>
+              ) : (
+                <>
+                  <p>• {formatINR(previousYearsPending)} will be applied to previous years debt</p>
+                  <p>• {formatINR(watchedAmount - previousYearsPending)} will be applied to current year fees</p>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Receipt Preview */}
+        {watchedAmount > 0 && (
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+            <h3 className="text-sm font-medium text-green-900 dark:text-green-100 mb-2">
               Receipt Preview
             </h3>
-            <p className="text-sm text-blue-700 dark:text-blue-300">
+            <p className="text-sm text-green-700 dark:text-green-300">
               Receipt number will be auto-generated: RCPT-2024-25-XXXXXX
             </p>
-            <p className="text-sm text-blue-700 dark:text-blue-300">
+            <p className="text-sm text-green-700 dark:text-green-300">
               After recording, you can download the receipt PDF and send it to the parent.
             </p>
           </div>
@@ -305,7 +352,7 @@ const FeePaymentModal = ({
           <Button
             type="submit"
             loading={recordPaymentMutation.isLoading}
-            disabled={watchedAmount <= 0 || watchedAmount > pendingFee}
+            disabled={watchedAmount <= 0}
           >
             Record Payment
           </Button>

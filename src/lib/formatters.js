@@ -198,3 +198,52 @@ export const formatNumber = (value) => {
   if (value === null || value === undefined || isNaN(value)) return '—'
   return new Intl.NumberFormat('en-IN').format(value)
 }
+
+/**
+ * Convert rupees to paise safely using integer arithmetic to avoid floating-point errors
+ * @param {string|number} rupees - Amount in rupees (can be string like "500" or "500.50")
+ * @returns {number} Amount in paise (integer)
+ * 
+ * Examples:
+ * - rupeesToPaise(500) => 50000
+ * - rupeesToPaise("500") => 50000
+ * - rupeesToPaise("500.50") => 50050
+ * - rupeesToPaise("500.5") => 50050
+ * - rupeesToPaise("500.05") => 50005
+ */
+export const rupeesToPaise = (rupees) => {
+  if (rupees === null || rupees === undefined || rupees === '') return 0
+  
+  // Convert to string to handle both string and number inputs
+  const rupeesStr = String(rupees).trim()
+  
+  // Handle invalid inputs
+  if (rupeesStr === '' || isNaN(parseFloat(rupeesStr))) return 0
+  
+  // Split into rupees and paise parts
+  const parts = rupeesStr.split('.')
+  const rupeesPart = parseInt(parts[0]) || 0
+  
+  // Handle paise part (decimal places)
+  let paisePart = 0
+  if (parts[1]) {
+    // Take only first 2 decimal places and pad with zeros if needed
+    const paiseStr = (parts[1] + '00').substring(0, 2)
+    paisePart = parseInt(paiseStr) || 0
+  }
+  
+  // Calculate total paise using integer arithmetic (no floating-point multiplication)
+  const totalPaise = (rupeesPart * 100) + paisePart
+  
+  return totalPaise
+}
+
+/**
+ * Convert paise to rupees safely
+ * @param {number} paise - Amount in paise
+ * @returns {number} Amount in rupees (as decimal number)
+ */
+export const paiseToRupees = (paise) => {
+  if (paise === null || paise === undefined || isNaN(paise)) return 0
+  return paise / 100
+}

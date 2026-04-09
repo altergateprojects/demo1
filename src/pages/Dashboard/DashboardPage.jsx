@@ -22,106 +22,72 @@ const DashboardPage = () => {
   const { data: recentActivity, isLoading: activityLoading } = useRecentActivity(5)
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-          Dashboard
-        </h1>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-          Welcome back, {profile?.full_name}! Here's an overview of your school's financial status.
-        </p>
-      </div>
-
-      {/* Quick Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {summaryLoading ? (
-          <>
-            <Skeleton.Card />
-            <Skeleton.Card />
-            <Skeleton.Card />
-            <Skeleton.Card />
-          </>
-        ) : (
-          <>
-            <Card>
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                    </svg>
-                  </div>
+    <div className="space-y-6 pb-8">
+      {/* Modern Header with Gradient */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 p-6 sm:p-8 shadow-xl">
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="relative z-10">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center space-x-3">
+                <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+                  <span className="text-xl sm:text-2xl">📊</span>
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Total Students</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                    {summary?.studentsCount?.toLocaleString('en-IN') || '0'}
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-white">
+                    Dashboard
+                  </h1>
+                  <p className="mt-1 text-sm text-blue-100">
+                    Welcome back, {profile?.full_name}! Here's an overview of your school's financial status.
                   </p>
                 </div>
               </div>
-            </Card>
+            </div>
+          </div>
 
-            <Card>
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
+          {/* Stats Cards */}
+          {summaryLoading ? (
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <Skeleton.Card />
+              <Skeleton.Card />
+              <Skeleton.Card />
+              <Skeleton.Card />
+            </div>
+          ) : (
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div className="rounded-xl bg-white/10 backdrop-blur-sm p-4 border border-white/20">
+                <div className="text-blue-100 text-xs sm:text-sm font-medium">Total Students</div>
+                <div className="mt-1 text-xl sm:text-2xl font-bold text-white">
+                  {summary?.studentsCount?.toLocaleString('en-IN') || '0'}
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Active Teachers</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                    {summary?.teachersCount?.toLocaleString('en-IN') || '0'}
-                  </p>
-                </div>
+                <div className="mt-1 text-xs text-blue-100">Enrolled students</div>
               </div>
-            </Card>
-
-            <RoleGate allow={['admin', 'finance']}>
-              <Card>
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg flex items-center justify-center">
-                      <svg className="w-5 h-5 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Pending Fees</p>
-                    <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                      {formatINR(summary?.pendingFeesSum || 0)}
-                    </p>
-                  </div>
+              <div className="rounded-xl bg-white/10 backdrop-blur-sm p-4 border border-white/20">
+                <div className="text-blue-100 text-xs sm:text-sm font-medium">Active Teachers</div>
+                <div className="mt-1 text-xl sm:text-2xl font-bold text-white">
+                  {summary?.teachersCount?.toLocaleString('en-IN') || '0'}
                 </div>
-              </Card>
-
-              <Card>
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-red-100 dark:bg-red-900/20 rounded-lg flex items-center justify-center">
-                      <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
+                <div className="mt-1 text-xs text-blue-100">Teaching staff</div>
+              </div>
+              <RoleGate allow={['admin', 'finance']}>
+                <div className="rounded-xl bg-white/10 backdrop-blur-sm p-4 border border-white/20">
+                  <div className="text-red-500 text-xs sm:text-sm font-medium">Pending Fees</div>
+                  <div className="mt-1 text-xl sm:text-2xl font-bold text-red-400">
+                    {formatINR(summary?.pendingFeesSum || 0)}
                   </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Total Pending</p>
-                    <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                      {formatINR(summary?.totalOutstanding || 0)}
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      All years + dues
-                    </p>
-                  </div>
+                  <div className="mt-1 text-xs text-red-500">Current year</div>
                 </div>
-              </Card>
-            </RoleGate>
-          </>
-        )}
+                <div className="rounded-xl bg-white/10 backdrop-blur-sm p-4 border border-white/20">
+                  <div className="text-red-500 text-xs sm:text-sm font-medium">Total Pending</div>
+                  <div className="mt-1 text-xl sm:text-2xl font-bold text-red-400">
+                    {formatINR(summary?.totalOutstanding || 0)}
+                  </div>
+                  <div className="mt-1 text-xs text-red-500">All years + dues</div>
+                </div>
+              </RoleGate>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Finance Overview - Admin/Finance Only */}
@@ -129,24 +95,24 @@ const DashboardPage = () => {
         {summaryLoading ? (
           <Skeleton.Card />
         ) : (
-          <Card>
+          <Card className="border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow duration-200">
             <Card.Header>
               <Card.Title>Financial Overview (Current Academic Year)</Card.Title>
             </Card.Header>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="text-center">
-                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Total Fees Collected</p>
+              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20">
+                <p className="text-sm font-medium text-green-900 dark:text-green-100">Total Fees Collected</p>
                 <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-2">
                   {formatINR(summary?.feesCollected || 0)}
                 </p>
-                <p className="text-sm text-slate-500 dark:text-slate-500 mt-1">This academic year</p>
+                <p className="text-sm text-green-700 dark:text-green-300 mt-1">This academic year</p>
               </div>
-              <div className="text-center">
-                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Pending Pocket Money</p>
+              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20">
+                <p className="text-sm font-medium text-red-900 dark:text-red-100">Pending Pocket Money</p>
                 <p className="text-3xl font-bold text-red-600 dark:text-red-400 mt-2">
                   {formatINR(summary?.totalNegativePocketMoney || 0)}
                 </p>
-                <p className="text-sm text-slate-500 dark:text-slate-500 mt-1">
+                <p className="text-sm text-red-700 dark:text-red-300 mt-1">
                   {summary?.negativePocketMoneyCount || 0} student{(summary?.negativePocketMoneyCount || 0) !== 1 ? 's' : ''} with negative balance
                 </p>
               </div>
@@ -157,13 +123,13 @@ const DashboardPage = () => {
 
       {/* Standard-wise Summary - Admin/Finance Only */}
       <RoleGate allow={['admin', 'finance']}>
-        <Card>
+        <Card className="border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow duration-200">
           <Card.Header>
             <Card.Title>Standard-wise Fee Summary</Card.Title>
           </Card.Header>
           {standardLoading ? (
             <Skeleton.Table rows={5} columns={6} />
-          ) : (
+          ) : standardSummary?.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                 <thead className="bg-slate-50 dark:bg-slate-800">
@@ -189,8 +155,8 @@ const DashboardPage = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-700">
-                  {standardSummary?.map((standard) => (
-                    <tr key={standard.standardName} className="hover:bg-slate-50 dark:hover:bg-slate-800">
+                  {standardSummary.map((standard) => (
+                    <tr key={standard.standardName} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-slate-100">
                         {standard.standardName}
                       </td>
@@ -203,29 +169,47 @@ const DashboardPage = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-slate-100">
                         {formatINR(standard.totalAnnualFee)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400 font-medium">
                         {formatINR(standard.totalPaid)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 dark:text-red-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 dark:text-red-400 font-medium">
                         {formatINR(standard.totalPending)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-slate-100">
-                        {standard.totalAnnualFee > 0 
-                          ? Math.round((standard.totalPaid / standard.totalAnnualFee) * 100)
-                          : 0
-                        }%
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
+                            <div 
+                              className="bg-blue-600 h-full rounded-full transition-all duration-300"
+                              style={{ 
+                                width: `${standard.totalAnnualFee > 0 
+                                  ? Math.round((standard.totalPaid / standard.totalAnnualFee) * 100)
+                                  : 0}%` 
+                              }}
+                            ></div>
+                          </div>
+                          <span className="text-slate-900 dark:text-slate-100 font-medium min-w-[3rem] text-right">
+                            {standard.totalAnnualFee > 0 
+                              ? Math.round((standard.totalPaid / standard.totalAnnualFee) * 100)
+                              : 0}%
+                          </span>
+                        </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="text-4xl mb-3">📚</div>
+              <p className="text-slate-600 dark:text-slate-400">No standard data available</p>
+            </div>
           )}
         </Card>
       </RoleGate>
 
       {/* Recent Activity */}
-      <Card>
+      <Card className="border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow duration-200">
         <Card.Header>
           <Card.Title>Recent Activity</Card.Title>
         </Card.Header>
@@ -242,11 +226,11 @@ const DashboardPage = () => {
             ))}
           </div>
         ) : recentActivity?.length > 0 ? (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {recentActivity.map((activity) => (
-              <div key={activity.id} className="flex items-center space-x-3">
+              <div key={activity.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                 <div className="flex-shrink-0">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                     activity.action_type === 'CREATE' 
                       ? 'bg-green-100 dark:bg-green-900/20'
                       : activity.action_type === 'UPDATE'
@@ -255,7 +239,7 @@ const DashboardPage = () => {
                       ? 'bg-red-100 dark:bg-red-900/20'
                       : 'bg-slate-100 dark:bg-slate-700'
                   }`}>
-                    <svg className={`w-4 h-4 ${
+                    <svg className={`w-5 h-5 ${
                       activity.action_type === 'CREATE' 
                         ? 'text-green-600 dark:text-green-400'
                         : activity.action_type === 'UPDATE'
@@ -276,8 +260,8 @@ const DashboardPage = () => {
                     </svg>
                   </div>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
                     {activity.description}
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-500">
@@ -288,60 +272,61 @@ const DashboardPage = () => {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">
-            No recent activity
-          </p>
+          <div className="text-center py-12">
+            <div className="text-4xl mb-3">📝</div>
+            <p className="text-sm text-slate-500 dark:text-slate-400">No recent activity</p>
+          </div>
         )}
       </Card>
 
       {/* Quick Actions */}
-      <Card>
+      <Card className="border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow duration-200">
         <Card.Header>
           <Card.Title>Quick Actions</Card.Title>
         </Card.Header>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <button className="p-4 text-left border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+          <button className="group p-4 text-left border-2 border-slate-200 dark:border-slate-700 rounded-xl hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all duration-200">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
               </div>
-              <span className="text-sm font-medium text-slate-900 dark:text-slate-100">Add Student</span>
+              <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">Add Student</span>
             </div>
           </button>
 
           <RoleGate allow={['admin', 'finance']}>
-            <button className="p-4 text-left border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+            <button className="group p-4 text-left border-2 border-slate-200 dark:border-slate-700 rounded-xl hover:border-green-300 dark:hover:border-green-700 hover:bg-green-50 dark:hover:bg-green-900/10 transition-all duration-200">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                   </svg>
                 </div>
-                <span className="text-sm font-medium text-slate-900 dark:text-slate-100">Record Payment</span>
+                <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">Record Payment</span>
               </div>
             </button>
 
-            <button className="p-4 text-left border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+            <button className="group p-4 text-left border-2 border-slate-200 dark:border-slate-700 rounded-xl hover:border-red-300 dark:hover:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/10 transition-all duration-200">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-red-100 dark:bg-red-900/20 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-10 h-10 bg-red-100 dark:bg-red-900/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <span className="text-sm font-medium text-slate-900 dark:text-slate-100">Add Expense</span>
+                <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">Add Expense</span>
               </div>
             </button>
 
-            <button className="p-4 text-left border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+            <button className="group p-4 text-left border-2 border-slate-200 dark:border-slate-700 rounded-xl hover:border-purple-300 dark:hover:border-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-all duration-200">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 00-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                 </div>
-                <span className="text-sm font-medium text-slate-900 dark:text-slate-100">Generate Report</span>
+                <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">Generate Report</span>
               </div>
             </button>
           </RoleGate>

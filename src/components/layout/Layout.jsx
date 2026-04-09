@@ -7,7 +7,7 @@ const Layout = ({ children }) => {
   const { sidebarCollapsed, sidebarOpen } = useUIStore()
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden">
+    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-900">
       {/* Sidebar */}
       <Sidebar />
       
@@ -20,14 +20,14 @@ const Layout = ({ children }) => {
       )}
       
       {/* Main content */}
-      <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${
+      <div className={`flex-1 flex flex-col transition-all duration-300 ${
         sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
       }`}>
         {/* Topbar */}
         <Topbar />
         
         {/* Page content */}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1">
           <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
             {children}
           </div>

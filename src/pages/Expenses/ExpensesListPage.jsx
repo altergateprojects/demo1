@@ -33,9 +33,7 @@ const ExpensesListPage = () => {
   const [filters, setFilters] = useState({
     category: '',
     dateFrom: '',
-    dateTo: '',
-    needsApproval: '',
-    isApproved: ''
+    dateTo: ''
   })
 
   const { data: expenses, isLoading } = useExpenses({
@@ -130,14 +128,6 @@ const ExpensesListPage = () => {
     
     if (expense.type === 'refund') {
       badges.push(<Badge key="refund" variant="info">Refund</Badge>)
-    } else if (!expense.needs_approval) {
-      badges.push(<Badge key="approved" variant="success">✅ Approved</Badge>)
-    } else if (expense.is_approved === null) {
-      badges.push(<Badge key="pending" variant="warning">⏳ Pending Approval</Badge>)
-    } else if (expense.is_approved) {
-      badges.push(<Badge key="approved" variant="success">✅ Approved</Badge>)
-    } else {
-      badges.push(<Badge key="rejected" variant="danger">❌ Rejected</Badge>)
     }
     
     return badges
@@ -246,7 +236,7 @@ const ExpensesListPage = () => {
           <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">Filters</h3>
           <button
             onClick={() => {
-              setFilters({ category: '', dateFrom: '', dateTo: '', needsApproval: '', isApproved: '' })
+              setFilters({ category: '', dateFrom: '', dateTo: '' })
               setSearchQuery('')
             }}
             className="text-sm text-red-600 hover:text-red-700 font-medium"
@@ -291,29 +281,6 @@ const ExpensesListPage = () => {
             placeholder="To Date"
             value={filters.dateTo}
             onChange={(e) => handleFilterChange('dateTo', e.target.value)}
-            className="rounded-lg"
-          />
-
-          <Select
-            value={filters.needsApproval}
-            onChange={(e) => handleFilterChange('needsApproval', e.target.value)}
-            options={[
-              { value: '', label: 'All Expenses' },
-              { value: 'true', label: 'Needs Approval' },
-              { value: 'false', label: 'No Approval Needed' }
-            ]}
-            className="rounded-lg"
-          />
-
-          <Select
-            value={filters.isApproved}
-            onChange={(e) => handleFilterChange('isApproved', e.target.value)}
-            options={[
-              { value: '', label: 'All Status' },
-              { value: 'true', label: 'Approved' },
-              { value: 'false', label: 'Rejected' },
-              { value: 'null', label: 'Pending' }
-            ]}
             className="rounded-lg"
           />
         </div>
@@ -500,34 +467,6 @@ const ExpenseRow = ({ expense, navigate, getStatusBadge, index }) => {
 
         {/* Actions Column - Fixed Width */}
         <div className="flex-shrink-0 w-24 flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          {expense.needs_approval && expense.is_approved === null && !expense.is_locked && (
-            <>
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  navigate(`/expenses/${expense.id}/approve`)
-                }}
-                variant="success"
-                size="sm"
-                className="text-xs px-2"
-                title="Approve"
-              >
-                ✅
-              </Button>
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  navigate(`/expenses/${expense.id}/reject`)
-                }}
-                variant="danger"
-                size="sm"
-                className="text-xs px-2"
-                title="Reject"
-              >
-                ❌
-              </Button>
-            </>
-          )}
           {!expense.is_locked && (
             <Button
               onClick={(e) => {

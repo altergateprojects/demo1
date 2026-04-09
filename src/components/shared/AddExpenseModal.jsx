@@ -12,7 +12,7 @@ import FileUpload from '../ui/FileUpload'
 import useAuthStore from '../../store/authStore'
 
 // Helper function to determine academic year from expense date
-const determineAcademicYearFromDate = async (expenseDate, academicYears) => {
+const determineAcademicYearFromDate = (expenseDate, academicYears) => {
   // Find the academic year that contains this expense date
   const matchingYear = academicYears.find(year => {
     const startDate = new Date(year.start_date)
@@ -40,7 +40,6 @@ const expenseSchema = z.object({
   payment_method: z.enum(['cash', 'cheque', 'upi', 'bank_transfer', 'dd', 'neft', 'rtgs']),
   reference_number: z.string().optional(),
   bill_number: z.string().min(1, 'Bill number is required for audit trail'),
-  needs_approval: z.boolean().default(false),
   notes: z.string().optional(),
   change_reason: z.string().min(10, 'Detailed reason for this expense is required for audit trail (minimum 10 characters)')
 })
@@ -66,19 +65,12 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
     defaultValues: {
       expense_date: new Date().toISOString().split('T')[0],
       amount_paise: 0,
-      payment_method: 'cash',
-      needs_approval: false
+      payment_method: 'cash'
     }
   })
 
   const watchedAmount = watch('amount_paise')
   const watchedCategory = watch('category')
-
-  // Auto-set approval requirement based on amount
-  React.useEffect(() => {
-    const shouldNeedApproval = watchedAmount > 1000000 // ₹10,000+
-    setValue('needs_approval', shouldNeedApproval)
-  }, [watchedAmount, setValue])
 
   const onSubmit = async (data) => {
     // Validate file uploads
@@ -127,7 +119,6 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
         payment_method: data.payment_method,
         reference_number: data.reference_number || null,
         bill_number: data.bill_number,
-        needs_approval: data.needs_approval || false,
         notes: data.notes || null,
         recorded_by: user.id,
         

@@ -1,23 +1,26 @@
 import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useStudent, useStudentFeeHistory } from '../../hooks/useStudents'
 import RoleGate from '../../components/shared/RoleGate'
 import FeePaymentModal from '../../components/shared/FeePaymentModal'
 import PocketMoneyModal from '../../components/shared/PocketMoneyModal'
 import TransactionHistoryModal from '../../components/shared/TransactionHistoryModal'
 import StudentFinancialHistoryModal from '../../components/shared/StudentFinancialHistoryModal'
+import DeleteStudentModal from '../../components/shared/DeleteStudentModal'
 import { formatINR } from '../../lib/formatters'
 import LoadingScreen from '../../components/ui/LoadingScreen'
 import EmptyState from '../../components/ui/EmptyState'
 
 const StudentDetailPage = () => {
   const { id } = useParams()
+  const navigate = useNavigate()
   const [showFeeModal, setShowFeeModal] = useState(false)
   const [showPocketMoneyModal, setShowPocketMoneyModal] = useState(false)
   const [pocketMoneyType, setPocketMoneyType] = useState('credit')
   const [showFeeHistoryModal, setShowFeeHistoryModal] = useState(false)
   const [showPocketHistoryModal, setShowPocketHistoryModal] = useState(false)
   const [showFinancialHistoryModal, setShowFinancialHistoryModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
   
   const { data: student, isLoading, error } = useStudent(id)
   const { data: feeHistory, isLoading: feeHistoryLoading } = useStudentFeeHistory(id)
@@ -49,47 +52,115 @@ const StudentDetailPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <div className="flex items-center space-x-2 text-sm text-slate-600 dark:text-slate-400 mb-2">
-            <Link to="/students" className="hover:text-slate-900 dark:hover:text-slate-100">
-              Students
-            </Link>
-            <span>/</span>
-            <span>{student.full_name}</span>
+      {/* Modern Gradient Header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-indigo-700 p-8 shadow-xl">
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="relative">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center space-x-4">
+              {/* Icon */}
+              <div className="flex-shrink-0 w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center text-3xl shadow-lg">
+                👨‍🎓
+              </div>
+              
+              {/* Title & Info */}
+              <div>
+                <div className="flex items-center space-x-2 text-indigo-100 text-sm mb-2">
+                  <Link to="/students" className="hover:text-white transition-colors">
+                    Students
+                  </Link>
+                  <span>/</span>
+                  <span className="text-white font-medium">{student.full_name}</span>
+                </div>
+                <h1 className="text-3xl font-bold text-white mb-2">
+                  {student.full_name}
+                </h1>
+                <div className="flex items-center space-x-4 text-indigo-100">
+                  <span className="flex items-center">
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                    </svg>
+                    Roll No: {student.roll_number}
+                  </span>
+                  <span className="flex items-center">
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                    {student.standards?.name}
+                  </span>
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                    student.status === 'active' 
+                      ? 'bg-green-500/20 text-green-100 border border-green-400/30'
+                      : 'bg-gray-500/20 text-gray-100 border border-gray-400/30'
+                  }`}>
+                    {student.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setShowFinancialHistoryModal(true)}
+                className="inline-flex items-center px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-medium rounded-lg border border-white/20 transition-all duration-200"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Financial History
+              </button>
+              <RoleGate allow={['admin', 'finance']}>
+                <button 
+                  onClick={() => setShowFeeModal(true)}
+                  className="inline-flex items-center px-4 py-2 bg-white hover:bg-indigo-50 text-indigo-700 font-medium rounded-lg shadow-lg transition-all duration-200"
+                >
+                  💰 Record Payment
+                </button>
+              </RoleGate>
+              <RoleGate allow={['admin', 'finance']}>
+                <Link 
+                  to={`/students/${id}/edit`}
+                  className="inline-flex items-center px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-medium rounded-lg border border-white/20 transition-all duration-200"
+                >
+                  ✏️ Edit
+                </Link>
+              </RoleGate>
+              <RoleGate allow={['admin']}>
+                <button 
+                  onClick={() => setShowDeleteModal(true)}
+                  className="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg shadow-lg transition-all duration-200"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Delete
+                </button>
+              </RoleGate>
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-            {student.full_name}
-          </h1>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            Roll No: {student.roll_number} • {student.standards?.name}
-          </p>
-        </div>
-        
-        <div className="flex space-x-3">
-          <button
-            onClick={() => setShowFinancialHistoryModal(true)}
-            className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg shadow-sm transition-all duration-200"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Financial History
-          </button>
-          <RoleGate allow={['admin', 'finance']}>
-            <button 
-              onClick={() => setShowFeeModal(true)}
-              className="btn-primary"
-            >
-              Record Payment
-            </button>
-          </RoleGate>
-          <RoleGate allow={['admin', 'finance']}>
-            <Link to={`/students/${id}/edit`} className="btn-secondary">
-              Edit Student
-            </Link>
-          </RoleGate>
+          
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <div className="text-indigo-100 text-sm mb-1">Annual Fee</div>
+              <div className="text-white text-xl font-bold">{formatINR(student.annual_fee_paise)}</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <div className="text-indigo-100 text-sm mb-1">Paid</div>
+              <div className="text-green-300 text-xl font-bold">{formatINR(student.fee_paid_paise)}</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <div className="text-indigo-100 text-sm mb-1">Pending</div>
+              <div className="text-red-300 text-xl font-bold">
+                {formatINR(Math.max(0, student.annual_fee_paise - student.fee_paid_paise))}
+              </div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <div className="text-indigo-100 text-sm mb-1">Pocket Money</div>
+              <div className="text-white text-xl font-bold">{formatINR(student.pocket_money_paise)}</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -482,6 +553,19 @@ const StudentDetailPage = () => {
         onClose={() => setShowFinancialHistoryModal(false)}
         student={student}
       />
+
+      {/* Delete Student Modal */}
+      {showDeleteModal && (
+        <DeleteStudentModal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          student={student}
+          onDeleteSuccess={() => {
+            setShowDeleteModal(false)
+            navigate('/students')
+          }}
+        />
+      )}
     </div>
   )
 }

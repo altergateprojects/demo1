@@ -8,6 +8,7 @@ import Modal from '../ui/Modal'
 import Input from '../ui/Input'
 import Select from '../ui/Select'
 import Button from '../ui/Button'
+import { rupeesToPaise } from '../../lib/formatters'
 import CurrencyInput from '../ui/CurrencyInput'
 
 const BorrowCapitalModal = ({ isOpen, onClose }) => {
@@ -92,8 +93,8 @@ const BorrowCapitalModal = ({ isOpen, onClose }) => {
 
     if (!validate()) return
 
-    // Convert amount to paise
-    const amount_paise = Math.round(parseFloat(formData.amount) * 100)
+    // Convert amount to paise using safe integer arithmetic
+    const amount_paise = rupeesToPaise(formData.amount)
 
     // Create data hash for fraud-proof using Web Crypto API
     const dataToHash = JSON.stringify({

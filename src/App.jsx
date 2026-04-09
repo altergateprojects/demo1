@@ -24,6 +24,7 @@ import AddStudentPage from './pages/Students/AddStudentPage'
 import EditStudentPage from './pages/Students/EditStudentPage'
 import StudentDuesPage from './pages/Students/StudentDuesPage'
 import StudentPromotionPage from './pages/Students/StudentPromotionPage'
+import AlumniPage from './pages/Students/AlumniPage'
 import TeachersListPage from './pages/Teachers/TeachersListPage'
 import TeacherDetailPage from './pages/Teachers/TeacherDetailPage'
 import AddTeacherPage from './pages/Teachers/AddTeacherPage'
@@ -112,6 +113,7 @@ function App() {
                       <Route path="/students/add" element={<AddStudentPage />} />
                       <Route path="/students/dues" element={<StudentDuesPage />} />
                       <Route path="/students/promotion" element={<StudentPromotionPage />} />
+                      <Route path="/students/alumni" element={<AlumniPage />} />
                       <Route path="/students/:id" element={<StudentDetailPage />} />
                       <Route path="/students/:id/edit" element={<EditStudentPage />} />
                     

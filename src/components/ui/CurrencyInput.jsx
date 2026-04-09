@@ -15,10 +15,12 @@ const CurrencyInput = ({
   const [displayValue, setDisplayValue] = useState('')
 
   useEffect(() => {
-    // Convert paise to rupees for display
-    if (value !== null && value !== undefined) {
-      const rupees = value / 100
-      setDisplayValue(rupees.toString())
+    // Convert paise to rupees for display using integer arithmetic
+    if (value !== null && value !== undefined && value >= 0) {
+      const rupees = Math.floor(value / 100)
+      const paise = value % 100
+      const displayRupees = paise > 0 ? `${rupees}.${paise.toString().padStart(2, '0')}` : rupees.toString()
+      setDisplayValue(displayRupees)
     } else {
       setDisplayValue('')
     }
@@ -28,17 +30,41 @@ const CurrencyInput = ({
     const inputValue = e.target.value
     setDisplayValue(inputValue)
 
-    // Convert rupees to paise and call onChange
-    const rupees = parseFloat(inputValue) || 0
-    const paise = Math.round(rupees * 100)
-    onChange?.(paise)
+    // Convert rupees to paise using integer arithmetic to avoid floating-point errors
+    if (inputValue === '' || inputValue === null || inputValue === undefined) {
+      onChange?.(0)
+      return
+    }
+
+    // Parse the input value and handle decimal places properly
+    const numericValue = parseFloat(inputValue)
+    if (isNaN(numericValue)) {
+      onChange?.(0)
+      return
+    }
+
+    // Convert to paise using integer arithmetic
+    // First, split into rupees and paise parts
+    const parts = inputValue.split('.')
+    const rupees = parseInt(parts[0]) || 0
+    const paisePart = parts[1] ? parseInt((parts[1] + '00').substring(0, 2)) : 0
+    
+    const totalPaise = (rupees * 100) + paisePart
+    onChange?.(totalPaise)
   }
 
   const handleBlur = () => {
-    // Format the display value on blur
+    // Format the display value on blur using integer arithmetic
     if (displayValue && !isNaN(displayValue)) {
-      const rupees = parseFloat(displayValue)
-      setDisplayValue(rupees.toFixed(2))
+      const parts = displayValue.split('.')
+      const rupees = parseInt(parts[0]) || 0
+      const paisePart = parts[1] ? parseInt((parts[1] + '00').substring(0, 2)) : 0
+      
+      if (paisePart > 0) {
+        setDisplayValue(`${rupees}.${paisePart.toString().padStart(2, '0')}`)
+      } else {
+        setDisplayValue(rupees.toString())
+      }
     }
   }
 

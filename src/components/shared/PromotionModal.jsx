@@ -4,6 +4,8 @@ import Button from '../ui/Button'
 import { usePromoteStudent, useValidatePromotion } from '../../hooks/useStudentPromotion'
 import { useAcademicYears, useStandards } from '../../hooks/useCommon'
 import { formatINR } from '../../lib/formatters'
+import { markStudentAsGraduated, markStudentAsLeftSchool } from '../../api/alumni.api'
+import toast from 'react-hot-toast'
 
 const PromotionModal = ({ student, isOpen, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -113,6 +115,42 @@ const PromotionModal = ({ student, isOpen, onClose, onSuccess }) => {
     setIsSubmitting(true)
 
     try {
+      // Handle graduation
+      if (formData.promotionStatus === 'graduated') {
+        const result = await markStudentAsGraduated(student.student_id, {
+          graduation_date: new Date().toISOString().split('T')[0],
+          achievements: null,
+          remarks: formData.notes || null
+        })
+        
+        if (result.success) {
+          toast.success(`${student.full_name} has been marked as graduated and moved to Alumni!`)
+          onSuccess?.()
+          onClose()
+        }
+        return
+      }
+
+      // Handle left school
+      if (formData.promotionStatus === 'left_school') {
+        const exitReason = formData.notes || 'Left school'
+        const result = await markStudentAsLeftSchool(student.student_id, {
+          exit_date: new Date().toISOString().split('T')[0],
+          exit_reason: exitReason,
+          remarks: formData.notes || null,
+          transfer_certificate_issued: false,
+          transfer_certificate_number: null
+        })
+        
+        if (result.success) {
+          toast.success(`${student.full_name} has been marked as left school!`)
+          onSuccess?.()
+          onClose()
+        }
+        return
+      }
+
+      // Regular promotion (promoted or repeated)
       const result = await promoteStudentMutation.mutateAsync({
         studentId: student.student_id,
         targetAcademicYearId: formData.targetAcademicYearId,
@@ -128,6 +166,7 @@ const PromotionModal = ({ student, isOpen, onClose, onSuccess }) => {
       }
     } catch (error) {
       console.error('Promotion error:', error)
+      toast.error('Failed to process promotion: ' + error.message)
     } finally {
       setIsSubmitting(false)
     }

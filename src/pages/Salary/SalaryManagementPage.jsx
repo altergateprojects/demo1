@@ -118,96 +118,75 @@ const SalaryManagementPage = () => {
   if (teachersLoading) return <LoadingScreen />
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-          Salary Management
-        </h1>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-          Record and track teacher salary payments with complete audit trail
-        </p>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-800">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">Total Teachers</p>
-              <p className="text-3xl font-bold text-blue-900 dark:text-blue-100 mt-1">{summary.total}</p>
-            </div>
-            <div className="w-12 h-12 bg-blue-200 dark:bg-blue-800 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-blue-900 dark:text-blue-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
+    <div className="space-y-6 pb-8">
+      {/* Modern Header with Gradient */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-teal-500 via-teal-600 to-teal-700 p-6 sm:p-8 shadow-xl">
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="relative z-10">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center space-x-3">
+                <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+                  <span className="text-xl sm:text-2xl">💵</span>
+                </div>
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-white">
+                    Salary Management
+                  </h1>
+                  <p className="mt-1 text-sm text-teal-100">
+                    Record and track teacher salary payments with complete audit trail
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
-        </Card>
 
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-800">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-green-900 dark:text-green-100">Paid</p>
-              <p className="text-3xl font-bold text-green-900 dark:text-green-100 mt-1">{summary.paid}</p>
-              <p className="text-xs text-green-700 dark:text-green-300 mt-1">{formatINR(summary.paidAmount)}</p>
+          {/* Stats Cards */}
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+            <div className="rounded-xl bg-white/10 backdrop-blur-sm p-4 border border-white/20">
+              <div className="text-teal-100 text-xs sm:text-sm font-medium">Total Teachers</div>
+              <div className="mt-1 text-xl sm:text-2xl font-bold text-white">{summary.total}</div>
+              <div className="mt-1 text-xs text-teal-100">Active staff</div>
             </div>
-            <div className="w-12 h-12 bg-green-200 dark:bg-green-800 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-green-900 dark:text-green-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+            <div className="rounded-xl bg-white/10 backdrop-blur-sm p-4 border border-white/20">
+              <div className="text-teal-100 text-xs sm:text-sm font-medium">Paid</div>
+              <div className="mt-1 text-xl sm:text-2xl font-bold text-white">{summary.paid}</div>
+              <div className="mt-1 text-xs text-teal-100">{formatINR(summary.paidAmount)}</div>
+            </div>
+            <div className="rounded-xl bg-white/10 backdrop-blur-sm p-4 border border-white/20">
+              <div className="text-teal-100 text-xs sm:text-sm font-medium">Pending</div>
+              <div className="mt-1 text-xl sm:text-2xl font-bold text-white">{summary.pending}</div>
+              <div className="mt-1 text-xs text-teal-100">{formatINR(summary.pendingAmount)}</div>
+            </div>
+            <div className="rounded-xl bg-white/10 backdrop-blur-sm p-4 border border-white/20">
+              <div className="text-teal-100 text-xs sm:text-sm font-medium">Partial</div>
+              <div className="mt-1 text-xl sm:text-2xl font-bold text-white">{summary.partial}</div>
+              <div className="mt-1 text-xs text-teal-100">Needs completion</div>
+            </div>
+            <div className="rounded-xl bg-white/10 backdrop-blur-sm p-4 border border-white/20">
+              <div className="text-teal-100 text-xs sm:text-sm font-medium">Overdue</div>
+              <div className="mt-1 text-xl sm:text-2xl font-bold text-white">{summary.overdue}</div>
+              <div className="mt-1 text-xs text-teal-100">Action required</div>
             </div>
           </div>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border-yellow-200 dark:border-yellow-800">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100">Pending</p>
-              <p className="text-3xl font-bold text-yellow-900 dark:text-yellow-100 mt-1">{summary.pending}</p>
-              <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">{formatINR(summary.pendingAmount)}</p>
-            </div>
-            <div className="w-12 h-12 bg-yellow-200 dark:bg-yellow-800 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-yellow-900 dark:text-yellow-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border-orange-200 dark:border-orange-800">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-orange-900 dark:text-orange-100">Partial</p>
-              <p className="text-3xl font-bold text-orange-900 dark:text-orange-100 mt-1">{summary.partial}</p>
-              <p className="text-xs text-orange-700 dark:text-orange-300 mt-1">Needs Completion</p>
-            </div>
-            <div className="w-12 h-12 bg-orange-200 dark:bg-orange-800 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-orange-900 dark:text-orange-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border-red-200 dark:border-red-800">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-red-900 dark:text-red-100">Overdue</p>
-              <p className="text-3xl font-bold text-red-900 dark:text-red-100 mt-1">{summary.overdue}</p>
-              <p className="text-xs text-red-700 dark:text-red-300 mt-1">Action Required</p>
-            </div>
-            <div className="w-12 h-12 bg-red-200 dark:bg-red-800 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-red-900 dark:text-red-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-1.964-1.333-2.732 0L3.732 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-          </div>
-        </Card>
+        </div>
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card className="p-6 border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">Filters</h3>
+          <button
+            onClick={() => {
+              setSelectedMonth(new Date().toISOString().slice(0, 7))
+              setFilterStatus('all')
+              setSearchQuery('')
+            }}
+            className="text-sm text-teal-600 hover:text-teal-700 font-medium"
+          >
+            Clear All
+          </button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Month Selector */}
           <div>
@@ -218,7 +197,7 @@ const SalaryManagementPage = () => {
               type="month"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
             />
           </div>
 
@@ -230,7 +209,7 @@ const SalaryManagementPage = () => {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
             >
               <option value="all">All Status</option>
               <option value="paid">Paid</option>
@@ -245,29 +224,52 @@ const SalaryManagementPage = () => {
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               Search Teachers
             </label>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by name or subject..."
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-            />
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by name or subject..."
+                className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </Card>
 
       {/* Teachers Table */}
-      <Card>
+      <Card className="border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow duration-200">
         <div className="overflow-x-auto">
           {paymentsLoading ? (
-            <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Loading payment data...</p>
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-teal-200 border-t-teal-600"></div>
+                <p className="mt-4 text-slate-600 dark:text-slate-400">Loading payment data...</p>
+              </div>
             </div>
           ) : filteredTeachers.length === 0 ? (
             <div className="text-center py-12">
+              <div className="text-6xl mb-4">💵</div>
+              <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
+                {searchQuery ? 'No matching teachers' : 'No teachers found'}
+              </h3>
               <p className="text-slate-600 dark:text-slate-400">
-                {searchQuery ? 'No teachers found matching your search.' : 'No teachers found.'}
+                {searchQuery ? 'Try adjusting your search or filters' : 'No teachers found for the selected criteria.'}
               </p>
             </div>
           ) : (
@@ -296,11 +298,11 @@ const SalaryManagementPage = () => {
               </thead>
               <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-700">
                 {filteredTeachers.map((teacher) => (
-                  <tr key={teacher.id} className="hover:bg-slate-50 dark:hover:bg-slate-800">
+                  <tr key={teacher.id} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Link 
                         to={`/teachers/${teacher.id}`}
-                        className="text-sm font-medium text-primary-600 hover:text-primary-900 dark:text-primary-400"
+                        className="text-sm font-medium text-teal-600 hover:text-teal-900 dark:text-teal-400"
                       >
                         {teacher.full_name}
                       </Link>
@@ -340,6 +342,7 @@ const SalaryManagementPage = () => {
                           variant="primary"
                           size="sm"
                           onClick={() => handlePaySalary(teacher)}
+                          className="bg-teal-600 hover:bg-teal-700"
                         >
                           {teacher.status === 'partial' ? 'Pay Remaining' : 'Pay Salary'}
                         </Button>

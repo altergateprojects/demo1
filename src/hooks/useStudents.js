@@ -163,14 +163,56 @@ export const useStudentsStats = (academicYearId) => {
         male: data.filter(s => s.gender === 'male').length,
         female: data.filter(s => s.gender === 'female').length,
         rte: data.filter(s => s.is_rte).length,
-        totalFees: data.reduce((sum, s) => sum + s.annual_fee_paise, 0),
-        totalPaid: data.reduce((sum, s) => sum + s.fee_paid_paise, 0),
-        totalPending: data.reduce((sum, s) => sum + Math.max(0, s.annual_fee_paise - s.fee_paid_paise), 0)
+        totalFees: data.reduce((sum, s) => sum + (s.annual_fee_paise || 0), 0),
+        totalPaid: data.reduce((sum, s) => sum + (s.fee_paid_paise || 0), 0),
+        totalPending: data.reduce((sum, s) => sum + (s.total_pending_paise || 0), 0),
+        previousYearsPending: data.reduce((sum, s) => sum + (s.previous_years_pending_paise || 0), 0),
+        currentYearPending: data.reduce((sum, s) => sum + (s.current_year_pending_paise || 0), 0),
+        totalPocketMoney: data.reduce((sum, s) => sum + (s.pocket_money_paise || 0), 0),
+        negativePocketMoney: data.filter(s => (s.pocket_money_paise || 0) < 0).length,
+        positivePocketMoney: data.filter(s => (s.pocket_money_paise || 0) > 0).length,
+        zeroPocketMoney: data.filter(s => (s.pocket_money_paise || 0) === 0).length
       }
       
       return stats
     },
     enabled: !!academicYearId,
     staleTime: 5 * 60 * 1000,
+  })
+}
+/**
+ * Hook to get complete student data for PDF export
+ */
+export const useCompleteStudentData = (studentId) => {
+  return useQuery({
+    queryKey: ['students', studentId, 'complete'],
+    queryFn: () => getCompleteStudentData(studentId),
+    enabled: !!studentId,
+    staleTime: 0, // Always fetch fresh data for deletion
+  })
+}
+
+/**
+ * Hook to delete student completely
+ */
+export const useDeleteStudentCompletely = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ studentId, reason }) => deleteStudentCompletely(studentId, reason),
+    onSuccess: (data) => {
+      // Invalidate all student-related queries
+      queryClient.invalidateQueries({ queryKey: ['students'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      
+      // Remove specific student from cache
+      queryClient.removeQueries({ queryKey: ['students', data.student_id] })
+      
+      toast.success('Student deleted successfully!')
+    },
+    onError: (error) => {
+      console.error('Error deleting student:', error)
+      toast.error(error.message || 'Failed to delete student')
+    }
   })
 }

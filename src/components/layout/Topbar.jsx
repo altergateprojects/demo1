@@ -1,13 +1,11 @@
 import React, { useState } from 'react'
 import useUIStore from '../../store/uiStore'
 import useAuthStore from '../../store/authStore'
-import useAlertStore from '../../store/alertStore'
 import { useAcademicYears } from '../../hooks/useCommon'
 
 const Topbar = () => {
   const { setSidebarOpen, theme, setTheme, currentAcademicYear, setCurrentAcademicYear } = useUIStore()
   const { profile, signOut } = useAuthStore()
-  const { criticalCount } = useAlertStore()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showThemeMenu, setShowThemeMenu] = useState(false)
   const [showYearMenu, setShowYearMenu] = useState(false)
@@ -96,18 +94,6 @@ const Topbar = () => {
             </div>
           )}
         </div>
-
-        {/* Notifications */}
-        <button className="relative p-2 rounded-md text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM11 19H6a2 2 0 01-2-2V7a2 2 0 012-2h5m5 0v5" />
-          </svg>
-          {criticalCount > 0 && (
-            <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
-              {criticalCount}
-            </span>
-          )}
-        </button>
 
         {/* Theme selector */}
         <div className="relative">

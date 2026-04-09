@@ -6,6 +6,8 @@ import { formatINR, formatDate } from '../../lib/formatters'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 import Badge from '../ui/Badge'
+import CorrectFeePaymentModal from './CorrectFeePaymentModal'
+import useAuthStore from '../../store/authStore'
 
 const TransactionHistoryModal = ({ 
   isOpen, 
@@ -13,7 +15,9 @@ const TransactionHistoryModal = ({
   student,
   type = 'fee' // 'fee' or 'pocket_money'
 }) => {
+  const { profile } = useAuthStore()
   const [activeTab, setActiveTab] = useState('all')
+  const [correctPaymentId, setCorrectPaymentId] = useState(null)
   
   const { data: feeHistory, isLoading: feeLoading } = useStudentFeeHistory(student?.id)
   const { data: pocketMoneyHistory, isLoading: pocketLoading } = usePocketMoneyHistory(student?.id)
@@ -173,7 +177,11 @@ const TransactionHistoryModal = ({
             filteredTransactions.map((transaction) => (
               <div
                 key={transaction.id}
-                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4"
+                className={`bg-white dark:bg-slate-800 border rounded-lg p-4 ${
+                  transaction.is_reversal 
+                    ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/10' 
+                    : 'border-slate-200 dark:border-slate-700'
+                }`}
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
@@ -202,11 +210,19 @@ const TransactionHistoryModal = ({
                         )
                       })()}
                       
-                      {type === 'fee' ? (
+                      {type === 'fee' && transaction.is_reversal && (
+                        <Badge variant="red">
+                          REVERSED
+                        </Badge>
+                      )}
+                      
+                      {type === 'fee' && !transaction.is_reversal && (
                         <Badge variant="blue">
                           {transaction.payment_method?.replace('_', ' ') || 'Cash'}
                         </Badge>
-                      ) : (
+                      )}
+                      
+                      {type === 'pocket_money' && (
                         <Badge variant={transaction.transaction_type === 'credit' ? 'green' : 'red'}>
                           {transaction.transaction_type}
                         </Badge>
@@ -214,7 +230,9 @@ const TransactionHistoryModal = ({
                     </div>
                     <p className="text-sm text-slate-600 dark:text-slate-400">
                       {type === 'fee' 
-                        ? transaction.notes || 'Fee payment'
+                        ? transaction.is_reversal 
+                          ? `REVERSAL: ${transaction.reversal_reason || transaction.notes || 'Payment reversed'}`
+                          : transaction.notes || 'Fee payment'
                         : transaction.description
                       }
                     </p>
@@ -236,15 +254,25 @@ const TransactionHistoryModal = ({
                     <div className={`text-lg font-semibold ${
                       type === 'pocket_money' && transaction.transaction_type === 'debit'
                         ? 'text-red-600 dark:text-red-400'
+                        : transaction.is_reversal
+                        ? 'text-red-600 dark:text-red-400'
                         : 'text-green-600 dark:text-green-400'
                     }`}>
-                      {type === 'pocket_money' && transaction.transaction_type === 'debit' ? '-' : '+'}
+                      {type === 'pocket_money' && transaction.transaction_type === 'debit' ? '-' : transaction.is_reversal ? '-' : '+'}
                       {formatINR(transaction.amount_paise)}
                     </div>
                     {type === 'fee' && transaction.reference_number && (
                       <p className="text-xs text-slate-500 dark:text-slate-500">
                         Ref: {transaction.reference_number}
                       </p>
+                    )}
+                    {type === 'fee' && !transaction.is_reversal && ['admin', 'finance'].includes(profile?.role) && (
+                      <button
+                        onClick={() => setCorrectPaymentId(transaction.id)}
+                        className="mt-2 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        Correct Payment
+                      </button>
                     )}
                   </div>
                 </div>
@@ -275,6 +303,13 @@ const TransactionHistoryModal = ({
           </Button>
         </div>
       </div>
+
+      {/* Correct Payment Modal */}
+      <CorrectFeePaymentModal
+        isOpen={!!correctPaymentId}
+        onClose={() => setCorrectPaymentId(null)}
+        paymentId={correctPaymentId}
+      />
     </Modal>
   )
 }

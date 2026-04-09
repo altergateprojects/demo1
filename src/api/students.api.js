@@ -34,9 +34,13 @@ export const getStudents = async ({
       query = query.eq('standard_id', standardId)
     }
 
-    if (status) {
+    if (status && status !== 'all') {
       query = query.eq('status', status)
+    } else if (!status) {
+      // By default, only show active students (exclude graduated, withdrawn, left_school)
+      query = query.eq('status', 'active')
     }
+    // If status === 'all', don't add any status filter
 
     if (gender) {
       query = query.eq('gender', gender)
@@ -145,9 +149,13 @@ const getStudentsBasic = async ({
       query = query.eq('standard_id', standardId)
     }
 
-    if (status) {
+    if (status && status !== 'all') {
       query = query.eq('status', status)
+    } else if (!status) {
+      // By default, only show active students (exclude graduated, withdrawn, left_school)
+      query = query.eq('status', 'active')
     }
+    // If status === 'all', don't add any status filter
 
     if (gender) {
       query = query.eq('gender', gender)
@@ -489,59 +497,74 @@ export const getStudentFeeHistory = async (studentId) => {
  */
 export const recordFeePayment = async (paymentData) => {
   try {
-    console.log('Starting fee payment recording:', paymentData)
+    console.log('Starting smart fee payment recording:', paymentData)
     
     const user = (await supabase.auth.getUser()).data.user
     if (!user) {
       throw new Error('User not authenticated')
     }
-    console.log('User authenticated:', user.id)
     
-    const academicYear = await getCurrentAcademicYear()
-    console.log('Academic year:', academicYear)
-
-    // Generate receipt number
-    const receiptNumber = await generateReceiptNumber(academicYear.year_label)
-    console.log('Generated receipt number:', receiptNumber)
-
-    const payment = {
-      ...paymentData,
-      academic_year_id: academicYear.id,
-      receipt_number: receiptNumber,
-      received_by: user.id
-    }
-    
-    console.log('Payment data to insert:', payment)
-
-    const { data, error } = await supabase
-      .from('fee_payments')
-      .insert([payment])
-      .select(`
-        *,
-        students(full_name, roll_number, standards(name))
-      `)
-      .single()
+    // Use the new smart payment function that handles previous years debt
+    const { data, error } = await supabase.rpc('record_fee_payment_smart', {
+      p_student_id: paymentData.student_id,
+      p_amount_paise: paymentData.amount_paise,
+      p_payment_method: paymentData.payment_method || 'cash',
+      p_payment_date: paymentData.payment_date || new Date().toISOString().split('T')[0],
+      p_notes: paymentData.notes || '',
+      p_reference_number: paymentData.reference_number || null,
+      p_bank_name: paymentData.bank_name || null
+    })
 
     if (error) {
-      console.error('Database error inserting payment:', error)
+      console.error('Database error in smart payment:', error)
       throw error
     }
     
-    console.log('Payment inserted successfully:', data)
+    console.log('Smart payment processed successfully:', data)
 
-    // Log audit trail
+    // Get the updated student data to return
+    const { data: studentData, error: studentError } = await supabase
+      .from('students')
+      .select(`
+        *,
+        standards(name)
+      `)
+      .eq('id', paymentData.student_id)
+      .single()
+
+    if (studentError) {
+      console.error('Error fetching updated student:', studentError)
+      throw studentError
+    }
+
+    // Log audit trail with allocation details
+    const allocation = data.allocation
+    const auditDescription = `Smart fee payment of ₹${paymentData.amount_paise / 100} processed. ` +
+      `Applied: ₹${allocation.applied_to_previous_years_paise / 100} to previous years, ` +
+      `₹${allocation.applied_to_current_year_paise / 100} to current year, ` +
+      `₹${allocation.added_to_pocket_money_paise / 100} to pocket money. ` +
+      `Receipt: ${data.receipt_number}`
+
     await logAuditAction({
       actionType: 'CREATE',
-      entityType: 'fee_payment',
-      entityId: data.id,
-      entityLabel: `${data.students.full_name} - ₹${data.amount_paise / 100}`,
+      entityType: 'fee_payment_smart',
+      entityId: data.payment_id,
+      entityLabel: `${studentData.full_name} - ₹${paymentData.amount_paise / 100}`,
       newValue: data,
-      description: `Fee payment of ₹${data.amount_paise / 100} recorded for ${data.students.full_name} (${data.students.roll_number}). Receipt: ${data.receipt_number}`
+      description: auditDescription
     })
 
-    return data
+    // Return enhanced payment data
+    return {
+      id: data.payment_id,
+      receipt_number: data.receipt_number,
+      amount_paise: paymentData.amount_paise,
+      allocation: data.allocation,
+      balances_after_payment: data.balances_after_payment,
+      student: studentData
+    }
   } catch (error) {
-    console.error('Error in recordFeePayment:', error)
+    console.error('Error in smart fee payment:', error)
     throw error
   }
 }
@@ -640,5 +663,217 @@ const logAuditAction = async (auditData) => {
     }
   } catch (error) {
     console.warn('Error in audit logging:', error.message)
+  }
+}
+
+/**
+ * Get complete student data for PDF export before deletion
+ */
+export const getCompleteStudentData = async (studentId) => {
+  try {
+    console.log('Fetching complete student data for:', studentId)
+
+    // Get student basic info with relations
+    const { data: student, error: studentError } = await supabase
+      .from('students')
+      .select(`
+        *,
+        standards(name, sort_order),
+        academic_years(year_label)
+      `)
+      .eq('id', studentId)
+      .single()
+
+    if (studentError) throw studentError
+
+    console.log('Complete student data fetched:', student)
+
+    // Get previous years pending from snapshots
+    const { data: snapshots, error: snapshotsError } = await supabase
+      .from('student_year_snapshots')
+      .select('dues_carried_forward_paise')
+      .eq('student_id', studentId)
+    
+    if (!snapshotsError && snapshots && snapshots.length > 0) {
+      const previousYearsPending = snapshots.reduce((sum, snapshot) => {
+        return sum + (snapshot.dues_carried_forward_paise || 0)
+      }, 0)
+      student.previous_years_pending_paise = previousYearsPending
+    } else {
+      student.previous_years_pending_paise = 0
+    }
+
+    // Get fee payments
+    const { data: feePayments, error: paymentsError } = await supabase
+      .from('fee_payments')
+      .select('*')
+      .eq('student_id', studentId)
+      .order('payment_date', { ascending: false })
+
+    if (paymentsError) {
+      console.warn('Error fetching fee payments:', paymentsError)
+    } else {
+      console.log('Fee payments fetched:', feePayments?.length || 0, 'records')
+    }
+
+    // Get student dues
+    const { data: studentDues, error: duesError } = await supabase
+      .from('student_dues')
+      .select('*')
+      .eq('student_id', studentId)
+      .order('due_date', { ascending: false })
+
+    if (duesError) {
+      console.warn('Error fetching student dues:', duesError)
+    } else {
+      console.log('Student dues fetched:', studentDues?.length || 0, 'records')
+    }
+
+    // Get pocket money transactions
+    const { data: pocketMoneyTransactions, error: pocketError } = await supabase
+      .from('pocket_money_transactions')
+      .select('*')
+      .eq('student_id', studentId)
+      .order('transaction_date', { ascending: false })
+
+    if (pocketError) {
+      console.warn('Error fetching pocket money transactions:', pocketError)
+    } else {
+      console.log('Pocket money transactions fetched:', pocketMoneyTransactions?.length || 0, 'records')
+    }
+
+    // Get year snapshots (promotion history)
+    const { data: yearSnapshots, error: yearError } = await supabase
+      .from('student_year_snapshots')
+      .select(`
+        *,
+        academic_years(year_label)
+      `)
+      .eq('student_id', studentId)
+      .order('snapshot_date', { ascending: false })
+
+    if (yearError) {
+      console.warn('Error fetching year snapshots:', yearError)
+    } else {
+      console.log('Year snapshots fetched:', yearSnapshots?.length || 0, 'records')
+    }
+
+    // Get audit logs
+    const { data: auditLogs, error: auditError } = await supabase
+      .from('audit_logs')
+      .select('*')
+      .eq('entity_id', studentId)
+      .order('created_at', { ascending: false })
+      .limit(100) // Increased from 50 to 100 for more complete audit trail
+
+    if (auditError) {
+      console.warn('Error fetching audit logs:', auditError)
+    } else {
+      console.log('Audit logs fetched:', auditLogs?.length || 0, 'records')
+    }
+
+    const completeData = {
+      student,
+      feePayments: feePayments || [],
+      studentDues: studentDues || [],
+      pocketMoneyTransactions: pocketMoneyTransactions || [],
+      yearSnapshots: yearSnapshots || [],
+      auditLogs: auditLogs || []
+    }
+
+    console.log('Complete data structure for PDF:', {
+      student: !!student,
+      feePaymentsCount: completeData.feePayments.length,
+      studentDuesCount: completeData.studentDues.length,
+      pocketMoneyTransactionsCount: completeData.pocketMoneyTransactions.length,
+      yearSnapshotsCount: completeData.yearSnapshots.length,
+      auditLogsCount: completeData.auditLogs.length
+    })
+
+    return completeData
+  } catch (error) {
+    console.error('Error fetching complete student data:', error)
+    throw error
+  }
+}
+
+/**
+ * Delete student and all related data (PERMANENT)
+ */
+export const deleteStudentCompletely = async (studentId, reason) => {
+  try {
+    console.log('Starting complete student deletion for:', studentId)
+    
+    const user = (await supabase.auth.getUser()).data.user
+    if (!user) {
+      throw new Error('User not authenticated')
+    }
+
+    // First, check what references exist
+    console.log('Checking student references...')
+    const { data: references, error: refError } = await supabase.rpc('check_student_references', {
+      p_student_id: studentId
+    })
+
+    if (!refError && references && references.length > 0) {
+      console.log('Found references that need to be deleted:', references)
+    }
+
+    // Use RPC function for complete deletion
+    const { data, error } = await supabase.rpc('delete_student_completely', {
+      p_student_id: studentId,
+      p_deletion_reason: reason,
+      p_deleted_by: user.id
+    })
+
+    if (error) {
+      console.error('Database error in student deletion:', error)
+      
+      // If regular deletion fails due to foreign keys, try force deletion
+      if (error.message?.includes('foreign key') || error.message?.includes('Foreign key')) {
+        console.log('Attempting force deletion with cascade...')
+        
+        const { data: forceData, error: forceError } = await supabase.rpc('force_delete_student_cascade', {
+          p_student_id: studentId,
+          p_deletion_reason: reason + ' (Force deleted due to foreign key constraints)',
+          p_deleted_by: user.id
+        })
+
+        if (forceError) {
+          throw new Error(`Force deletion also failed: ${forceError.message}`)
+        }
+
+        console.log('Force deletion successful:', forceData)
+        return forceData
+      }
+      
+      // Provide more specific error messages
+      if (error.message?.includes('not found')) {
+        throw new Error('Student not found in database')
+      } else if (error.message?.includes('permission')) {
+        throw new Error('You do not have permission to delete students')
+      } else if (error.code === '42883') {
+        throw new Error('Database function not found. Please contact administrator to set up the deletion system.')
+      } else {
+        throw new Error(`Database error: ${error.message || 'Unknown error occurred'}`)
+      }
+    }
+
+    console.log('Student deleted completely:', data)
+
+    // Log audit trail for deletion
+    await logAuditAction({
+      actionType: 'DELETE',
+      entityType: 'student_complete',
+      entityId: studentId,
+      entityLabel: `Student ID: ${studentId}`,
+      oldValue: { student_id: studentId },
+      description: `Complete student deletion: ${reason}. All related data removed.`
+    })
+
+    return data
+  } catch (error) {
+    console.error('Error in complete student deletion:', error)
+    throw error
   }
 }

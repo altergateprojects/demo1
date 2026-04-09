@@ -80,153 +80,292 @@ const ExpenseDetailPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-            Expense Details
-          </h1>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            View complete expense information and audit trail
-          </p>
-        </div>
-        <div className="flex space-x-3">
-          <Button onClick={() => navigate('/expenses')} variant="secondary">
-            ← Back to Expenses
-          </Button>
-          {!expense.is_locked && (
-            <Button onClick={() => navigate(`/expenses/${id}/edit`)}>
-              ✏️ Edit
-            </Button>
-          )}
+      {/* Modern Gradient Header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-500 via-red-600 to-red-700 p-8 shadow-xl">
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="relative">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center space-x-4">
+              {/* Icon */}
+              <div className="flex-shrink-0 w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center text-3xl shadow-lg">
+                💰
+              </div>
+              
+              {/* Title & Info */}
+              <div>
+                <div className="flex items-center space-x-2 text-red-100 text-sm mb-2">
+                  <button onClick={() => navigate('/expenses')} className="hover:text-white transition-colors">
+                    Expenses
+                  </button>
+                  <span>/</span>
+                  <span className="text-white font-medium">Expense Details</span>
+                </div>
+                <h1 className="text-3xl font-bold text-white mb-2">
+                  {expense.description}
+                </h1>
+                <div className="flex items-center space-x-3 flex-wrap gap-2">
+                  {expense.expense_number && (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/20 text-white border border-white/30">
+                      #{expense.expense_number}
+                    </span>
+                  )}
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/20 text-white border border-white/30">
+                    {EXPENSE_CATEGORIES.find(cat => cat.value === expense.category)?.label || expense.category}
+                  </span>
+                  {expense.is_locked ? (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-900/50 text-red-100 border border-red-400/30">
+                      🔒 Locked
+                    </span>
+                  ) : expense.type === 'refund' ? (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-100 border border-blue-400/30">
+                      Refund
+                    </span>
+                  ) : !expense.needs_approval ? (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-100 border border-green-400/30">
+                      ✅ Approved
+                    </span>
+                  ) : expense.is_approved === null ? (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-500/20 text-yellow-100 border border-yellow-400/30">
+                      ⏳ Pending
+                    </span>
+                  ) : expense.is_approved ? (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-100 border border-green-400/30">
+                      ✅ Approved
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-900/50 text-red-100 border border-red-400/30">
+                      ❌ Rejected
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex items-center space-x-3">
+              <button 
+                onClick={() => navigate('/expenses')}
+                className="inline-flex items-center px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-medium rounded-lg border border-white/20 transition-all duration-200"
+              >
+                ← Back
+              </button>
+              {!expense.is_locked && (
+                <button 
+                  onClick={() => navigate(`/expenses/${id}/edit`)}
+                  className="inline-flex items-center px-4 py-2 bg-white hover:bg-red-50 text-red-700 font-medium rounded-lg shadow-lg transition-all duration-200"
+                >
+                  ✏️ Edit
+                </button>
+              )}
+            </div>
+          </div>
+          
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <div className="text-red-100 text-sm mb-1">Amount</div>
+              <div className="text-white text-xl font-bold">{formatINR(expense.amount_paise)}</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <div className="text-red-100 text-sm mb-1">Date</div>
+              <div className="text-white text-lg font-semibold">{formatDate(expense.expense_date)}</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <div className="text-red-100 text-sm mb-1">Payment Method</div>
+              <div className="text-white text-lg font-semibold capitalize">{expense.payment_method?.replace('_', ' ')}</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <div className="text-red-100 text-sm mb-1">Vendor</div>
+              <div className="text-white text-lg font-semibold truncate">{expense.vendor_name || 'N/A'}</div>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Main Details */}
       <Card className="p-6">
-        <div className="flex items-start justify-between mb-6">
+        <div className="space-y-6">
+          {/* Section: Vendor Information */}
           <div>
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
-              {expense.description}
-            </h2>
-            <div className="flex items-center space-x-2 mt-2 flex-wrap">
-              {getStatusBadge()}
-              <Badge variant="secondary">
-                {EXPENSE_CATEGORIES.find(cat => cat.value === expense.category)?.label || expense.category}
-              </Badge>
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-              {formatINR(expense.amount_paise)}
-            </div>
-            <div className="text-sm text-slate-600 dark:text-slate-400">
-              {formatDate(expense.expense_date)}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Vendor Information
-              </label>
-              <div className="mt-1 text-sm text-slate-900 dark:text-slate-100">
-                <div>{expense.vendor_name || 'N/A'}</div>
-                {expense.vendor_phone && (
-                  <div className="text-slate-600 dark:text-slate-400">{expense.vendor_phone}</div>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Payment Details
-              </label>
-              <div className="mt-1 text-sm text-slate-900 dark:text-slate-100">
-                <div>Method: {expense.payment_method?.replace('_', ' ')}</div>
-                {expense.reference_number && (
-                  <div>Reference: {expense.reference_number}</div>
-                )}
-                {expense.bill_number && (
-                  <div>Bill #: {expense.bill_number}</div>
-                )}
-              </div>
-            </div>
-
-            {expense.sub_category && (
+            <h3 className="flex items-center text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
+              <svg className="w-5 h-5 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              Vendor Information
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Sub Category
+                <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
+                  Vendor Name
                 </label>
-                <div className="mt-1 text-sm text-slate-900 dark:text-slate-100">
-                  {expense.sub_category}
+                <p className="text-slate-900 dark:text-slate-100 font-medium">
+                  {expense.vendor_name || 'N/A'}
+                </p>
+              </div>
+              {expense.vendor_phone && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    Phone Number
+                  </label>
+                  <p className="text-slate-900 dark:text-slate-100 font-medium">
+                    {expense.vendor_phone}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="border-t border-slate-200 dark:border-slate-700"></div>
+
+          {/* Section: Payment Details */}
+          <div>
+            <h3 className="flex items-center text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
+              <svg className="w-5 h-5 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              </svg>
+              Payment Details
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
+                  Payment Method
+                </label>
+                <p className="text-slate-900 dark:text-slate-100 font-medium capitalize">
+                  {expense.payment_method?.replace('_', ' ')}
+                </p>
+              </div>
+              {expense.reference_number && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    Reference Number
+                  </label>
+                  <p className="text-slate-900 dark:text-slate-100 font-medium font-mono">
+                    {expense.reference_number}
+                  </p>
+                </div>
+              )}
+              {expense.bill_number && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    Bill Number
+                  </label>
+                  <p className="text-slate-900 dark:text-slate-100 font-medium font-mono">
+                    {expense.bill_number}
+                  </p>
+                </div>
+              )}
+              {expense.sub_category && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    Sub Category
+                  </label>
+                  <p className="text-slate-900 dark:text-slate-100 font-medium">
+                    {expense.sub_category}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="border-t border-slate-200 dark:border-slate-700"></div>
+
+          {/* Section: Security Information */}
+          <div>
+            <h3 className="flex items-center text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
+              <svg className="w-5 h-5 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              Security & Integrity
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {expense.data_hash && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    Data Hash
+                  </label>
+                  <p className="text-slate-900 dark:text-slate-100 font-mono text-xs break-all">
+                    {expense.data_hash}
+                  </p>
+                </div>
+              )}
+              {expense.created_at && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    Created At
+                  </label>
+                  <p className="text-slate-900 dark:text-slate-100 font-medium">
+                    {formatDate(expense.created_at)}
+                  </p>
+                </div>
+              )}
+              {expense.is_locked && expense.locked_at && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    Locked At
+                  </label>
+                  <p className="text-red-600 dark:text-red-400 font-medium">
+                    🔒 {formatDate(expense.locked_at)}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Notes Section */}
+          {(expense.approval_notes || expense.notes) && (
+            <>
+              <div className="border-t border-slate-200 dark:border-slate-700"></div>
+              <div>
+                <h3 className="flex items-center text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
+                  <svg className="w-5 h-5 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                  </svg>
+                  Notes
+                </h3>
+                <div className="space-y-3">
+                  {expense.approval_notes && (
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <label className="block text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                        Approval Notes
+                      </label>
+                      <p className="text-blue-800 dark:text-blue-200">
+                        {expense.approval_notes}
+                      </p>
+                    </div>
+                  )}
+                  {expense.notes && (
+                    <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        Additional Notes
+                      </label>
+                      <p className="text-slate-900 dark:text-slate-100">
+                        {expense.notes}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
-          </div>
+            </>
+          )}
 
-          <div className="space-y-4">
-            {/* Fraud-proof information */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Security Information
-              </label>
-              <div className="mt-1 text-xs text-slate-600 dark:text-slate-400 space-y-1">
-                {expense.data_hash && (
-                  <div className="font-mono">🔐 Hash: {expense.data_hash.substring(0, 16)}...</div>
-                )}
-                {expense.created_at && (
-                  <div>📅 Created: {formatDate(expense.created_at)}</div>
-                )}
-                {expense.is_locked && expense.locked_at && (
-                  <div className="text-red-600">🔒 Locked: {formatDate(expense.locked_at)}</div>
-                )}
-              </div>
+          {/* Action Buttons */}
+          <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+            <div className="flex space-x-3">
+              <Button
+                onClick={loadAttachments}
+                loading={loadingAttachments}
+                variant="secondary"
+              >
+                📎 View Attachments
+              </Button>
+              <Button
+                onClick={loadAuditTrail}
+                loading={loadingAudit}
+                variant="secondary"
+              >
+                📋 View Audit Trail
+              </Button>
             </div>
-
-            {expense.approval_notes && (
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Approval Notes
-                </label>
-                <div className="mt-1 p-3 bg-slate-50 dark:bg-slate-800 rounded text-sm">
-                  {expense.approval_notes}
-                </div>
-              </div>
-            )}
-
-            {expense.notes && (
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Additional Notes
-                </label>
-                <div className="mt-1 text-sm text-slate-900 dark:text-slate-100">
-                  {expense.notes}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
-          <div className="flex space-x-3">
-            <Button
-              onClick={loadAttachments}
-              loading={loadingAttachments}
-              variant="secondary"
-            >
-              📎 View Attachments
-            </Button>
-            <Button
-              onClick={loadAuditTrail}
-              loading={loadingAudit}
-              variant="secondary"
-            >
-              📋 View Audit Trail
-            </Button>
           </div>
         </div>
       </Card>

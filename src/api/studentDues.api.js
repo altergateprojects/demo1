@@ -404,3 +404,109 @@ export const getDuesSummaryStats = async (academicYearId = null) => {
     }
   }
 }
+
+/**
+ * Add payment to exit due
+ */
+export const addExitDuePayment = async (exitDueId, paymentData) => {
+  try {
+    // For exit dues, we'll create a manual due entry and then pay it
+    // This maintains consistency with the existing payment system
+    
+    // First, get the exit due details
+    const { data: exitDue, error: exitError } = await supabase
+      .from('student_exit_dues')
+      .select('*')
+      .eq('id', exitDueId)
+      .single()
+
+    if (exitError) throw exitError
+
+    // Create manual due entries for the amounts being paid
+    const dueEntries = []
+    let remainingPayment = paymentData.payment_amount_paise
+
+    // Create fee due if there's pending fee amount
+    if (exitDue.pending_fee_paise > 0 && remainingPayment > 0) {
+      const feePayment = Math.min(remainingPayment, exitDue.pending_fee_paise)
+      
+      const { data: feeDue, error: feeDueError } = await supabase
+        .from('student_dues')
+        .insert({
+          student_id: exitDue.student_id,
+          due_type: 'fee',
+          amount_paise: feePayment,
+          due_date: exitDue.exit_date,
+          description: `Exit Due Payment - Fee (${exitDue.exit_reason})`,
+          academic_year_id: null,
+          created_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .select()
+        .single()
+
+      if (feeDueError) throw feeDueError
+      
+      dueEntries.push({ dueId: feeDue.id, amount: feePayment, type: 'fee' })
+      remainingPayment -= feePayment
+    }
+
+    // Create pocket money due if there's pending pocket money and remaining payment
+    if (exitDue.pending_pocket_money_paise < 0 && remainingPayment > 0) {
+      const pocketPayment = Math.min(remainingPayment, Math.abs(exitDue.pending_pocket_money_paise))
+      
+      const { data: pocketDue, error: pocketDueError } = await supabase
+        .from('student_dues')
+        .insert({
+          student_id: exitDue.student_id,
+          due_type: 'pocket_money',
+          amount_paise: pocketPayment,
+          due_date: exitDue.exit_date,
+          description: `Exit Due Payment - Pocket Money (${exitDue.exit_reason})`,
+          academic_year_id: null,
+          created_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .select()
+        .single()
+
+      if (pocketDueError) throw pocketDueError
+      
+      dueEntries.push({ dueId: pocketDue.id, amount: pocketPayment, type: 'pocket_money' })
+      remainingPayment -= pocketPayment
+    }
+
+    // Now pay each due entry
+    const paymentResults = []
+    for (const entry of dueEntries) {
+      const result = await addDuePayment(entry.dueId, {
+        ...paymentData,
+        payment_amount_paise: entry.amount
+      })
+      paymentResults.push({ ...result, type: entry.type })
+    }
+
+    // Update the exit due amounts
+    const newPendingFee = Math.max(0, exitDue.pending_fee_paise - (dueEntries.find(e => e.type === 'fee')?.amount || 0))
+    const newPendingPocket = Math.min(0, exitDue.pending_pocket_money_paise + (dueEntries.find(e => e.type === 'pocket_money')?.amount || 0))
+
+    await supabase
+      .from('student_exit_dues')
+      .update({
+        pending_fee_paise: newPendingFee,
+        pending_pocket_money_paise: newPendingPocket,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', exitDueId)
+
+    return {
+      success: true,
+      payment_results: paymentResults,
+      remaining_fee: newPendingFee,
+      remaining_pocket: newPendingPocket,
+      total_paid: paymentData.payment_amount_paise
+    }
+
+  } catch (error) {
+    console.error('Error adding exit due payment:', error)
+    throw error
+  }
+}
