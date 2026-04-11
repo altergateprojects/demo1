@@ -23,6 +23,18 @@ const TransactionHistoryModal = ({
   const { data: pocketMoneyHistory, isLoading: pocketLoading } = usePocketMoneyHistory(student?.id)
   const { data: academicYears } = useAcademicYears()
 
+  // Debug logging
+  React.useEffect(() => {
+    if (type === 'pocket_money' && student?.id) {
+      console.log('Pocket Money History Modal:', {
+        studentId: student.id,
+        type,
+        pocketMoneyHistory,
+        isLoading: pocketLoading
+      })
+    }
+  }, [type, student?.id, pocketMoneyHistory, pocketLoading])
+
   if (!student) return null
 
   // Helper function to determine which academic year a transaction belongs to

@@ -232,16 +232,30 @@ const CorrectFeePaymentModal = ({ isOpen, onClose, paymentId }) => {
                 </label>
                 <input
                   type="number"
-                  step="1"
+                  step="0.01"
                   min="0"
                   className={`input-field ${errors.new_amount_paise ? 'border-red-300 dark:border-red-600' : ''}`}
                   value={formData.new_amount_paise / 100}
                   onChange={(e) => {
-                    const rupees = parseFloat(e.target.value) || 0
-                    const paise = Math.round(rupees * 100)
-                    setFormData(prev => ({ ...prev, new_amount_paise: paise }))
+                    const inputValue = e.target.value
+                    if (inputValue === '' || inputValue === null) {
+                      setFormData(prev => ({ ...prev, new_amount_paise: 0 }))
+                      return
+                    }
+                    
+                    // Use integer arithmetic to avoid floating-point errors
+                    const parts = inputValue.split('.')
+                    const rupees = parseInt(parts[0]) || 0
+                    let paisePart = 0
+                    if (parts[1]) {
+                      const paiseStr = (parts[1] + '00').substring(0, 2)
+                      paisePart = parseInt(paiseStr) || 0
+                    }
+                    const totalPaise = (rupees * 100) + paisePart
+                    
+                    setFormData(prev => ({ ...prev, new_amount_paise: totalPaise }))
                   }}
-                  placeholder="0"
+                  placeholder="0.00"
                 />
                 {errors.new_amount_paise && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.new_amount_paise}</p>

@@ -28,28 +28,40 @@ const CurrencyInput = ({
 
   const handleChange = (e) => {
     const inputValue = e.target.value
-    setDisplayValue(inputValue)
-
-    // Convert rupees to paise using integer arithmetic to avoid floating-point errors
-    if (inputValue === '' || inputValue === null || inputValue === undefined) {
-      onChange?.(0)
-      return
-    }
-
-    // Parse the input value and handle decimal places properly
-    const numericValue = parseFloat(inputValue)
-    if (isNaN(numericValue)) {
-      onChange?.(0)
-      return
-    }
-
-    // Convert to paise using integer arithmetic
-    // First, split into rupees and paise parts
-    const parts = inputValue.split('.')
-    const rupees = parseInt(parts[0]) || 0
-    const paisePart = parts[1] ? parseInt((parts[1] + '00').substring(0, 2)) : 0
     
-    const totalPaise = (rupees * 100) + paisePart
+    // Allow only numbers and one decimal point
+    const cleanValue = inputValue.replace(/[^\d.]/g, '')
+    
+    // Prevent multiple decimal points
+    const decimalCount = (cleanValue.match(/\./g) || []).length
+    if (decimalCount > 1) {
+      return // Don't update if multiple decimals
+    }
+    
+    setDisplayValue(cleanValue)
+
+    // Convert rupees to paise using PURE integer arithmetic
+    if (cleanValue === '' || cleanValue === '.' || cleanValue === null || cleanValue === undefined) {
+      onChange?.(0)
+      return
+    }
+
+    // Split into rupees and paise parts
+    const parts = cleanValue.split('.')
+    const rupeesStr = parts[0] || '0'
+    const paiseStr = parts[1] || '0'
+    
+    // Parse as integers ONLY - no floating point
+    const rupees = parseInt(rupeesStr, 10) || 0
+    
+    // Handle paise: pad with zeros and take first 2 digits
+    const paisePadded = (paiseStr + '00').substring(0, 2)
+    const paise = parseInt(paisePadded, 10) || 0
+    
+    // Calculate total using PURE integer arithmetic
+    // 10000 rupees = 10000 * 100 = 1000000 paise (EXACT)
+    const totalPaise = (rupees * 100) + paise
+    
     onChange?.(totalPaise)
   }
 
@@ -83,9 +95,8 @@ const CurrencyInput = ({
           <span className="text-slate-500 dark:text-slate-400 text-sm">₹</span>
         </div>
         <input
-          type="number"
-          step="0.01"
-          min="0"
+          type="text"
+          inputMode="decimal"
           className={inputClasses}
           value={displayValue}
           onChange={handleChange}

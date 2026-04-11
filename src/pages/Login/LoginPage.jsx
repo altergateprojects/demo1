@@ -42,18 +42,6 @@ const LoginPage = () => {
     }
   }
 
-  // Demo credentials for testing
-  const demoCredentials = [
-    { email: 'admin@school.edu', password: 'admin123', role: 'Administrator' },
-    { email: 'finance@school.edu', password: 'finance123', role: 'Finance Staff' },
-    { email: 'staff@school.edu', password: 'staff123', role: 'Staff' }
-  ]
-
-  const fillDemoCredentials = (email, password) => {
-    document.getElementById('email').value = email
-    document.getElementById('password').value = password
-  }
-
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -135,49 +123,6 @@ const LoginPage = () => {
               </button>
             </div>
           </form>
-
-          {/* Demo credentials */}
-          <div className="mt-8 border-t border-slate-200 dark:border-slate-700 pt-6">
-            <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-              Demo Credentials (for testing):
-            </h3>
-            <div className="space-y-2">
-              {demoCredentials.map((cred, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => fillDemoCredentials(cred.email, cred.password)}
-                  className="w-full text-left p-2 text-xs bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 rounded border border-slate-200 dark:border-slate-600 transition-colors"
-                >
-                  <div className="font-medium text-slate-900 dark:text-slate-100">{cred.role}</div>
-                  <div className="text-slate-600 dark:text-slate-400">{cred.email}</div>
-                </button>
-              ))}
-            </div>
-            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-              Click any credential above to auto-fill the form
-            </p>
-            
-            {/* Connection Status */}
-            <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                    Supabase Setup Required
-                  </h3>
-                  <p className="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
-                    To use login functionality, you need to set up the Supabase database and create demo users. 
-                    Check the <code className="bg-yellow-100 dark:bg-yellow-800 px-1 rounded">setup.md</code> file for instructions.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 

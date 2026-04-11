@@ -121,14 +121,15 @@ const getActiveTeachersCount = async () => {
 
 /**
  * Get pending fees sum for CURRENT academic year only
+ * INCLUDES exited students who still have pending fees
  */
 const getPendingFeesSum = async (academicYearId) => {
   try {
     const { data, error } = await supabase
       .from('students')
-      .select('annual_fee_paise, fee_paid_paise')
+      .select('annual_fee_paise, fee_paid_paise, status')
       .eq('academic_year_id', academicYearId)
-      .eq('status', 'active')
+      .in('status', ['active', 'exited'])  // Include exited students
       .eq('is_deleted', false)
 
     if (error) throw error
@@ -147,15 +148,16 @@ const getPendingFeesSum = async (academicYearId) => {
 
 /**
  * Get pending fees sum from ALL previous years (excluding current year)
+ * INCLUDES exited students who still have pending fees
  */
 const getAllYearsPendingFees = async (currentAcademicYearId) => {
   try {
     // Get pending fees from ALL years except current year
     const { data, error } = await supabase
       .from('students')
-      .select('annual_fee_paise, fee_paid_paise, academic_year_id')
+      .select('annual_fee_paise, fee_paid_paise, academic_year_id, status')
       .neq('academic_year_id', currentAcademicYearId)
-      .eq('status', 'active')
+      .in('status', ['active', 'exited'])  // Include exited students
       .eq('is_deleted', false)
 
     if (error) throw error
@@ -253,13 +255,15 @@ const getCriticalAlertsCount = async () => {
 
 /**
  * Get total pending dues from student_dues table (all years)
+ * ONLY includes non-cleared dues with remaining balance
  */
 const getTotalPendingDues = async () => {
   try {
-    // Get ALL dues - your table doesn't have a status column
+    // Get only non-cleared dues
     const { data, error } = await supabase
       .from('student_dues')
-      .select('amount_paise, amount_paid_paise')
+      .select('amount_paise, amount_paid_paise, is_cleared')
+      .eq('is_cleared', false)  // Only get non-cleared dues
 
     if (error) {
       console.error('❌ Error fetching student dues:', error)
@@ -267,7 +271,7 @@ const getTotalPendingDues = async () => {
     }
 
     if (!data || data.length === 0) {
-      console.warn('⚠️ No student dues found in database')
+      console.warn('⚠️ No pending student dues found in database')
       return 0
     }
 

@@ -16,6 +16,8 @@ import EmptyState from '../../components/ui/EmptyState'
 import AddExpenseModal from '../../components/shared/AddExpenseModal'
 import BorrowCapitalModal from '../../components/shared/BorrowCapitalModal'
 import ExpenseGraphModal from '../../components/shared/ExpenseGraphModal'
+import { exportExpensesToExcel } from '../../lib/excelExport'
+import toast from 'react-hot-toast'
 
 const ExpensesListPage = () => {
   const navigate = useNavigate()
@@ -112,10 +114,50 @@ const ExpensesListPage = () => {
     setFilters(prev => ({ ...prev, [key]: value }))
   }
 
+  const handleExportToExcel = () => {
+    if (!filteredExpenses || filteredExpenses.length === 0) {
+      toast.error('No expenses to export')
+      return
+    }
+
+    try {
+      const yearLabel = academicYears?.find(y => y.id === selectedYearId)?.year_label || currentYear?.year_label || 'All Years'
+      exportExpensesToExcel(filteredExpenses, yearLabel)
+      toast.success(`Exported ${filteredExpenses.length} expenses to Excel`)
+    } catch (error) {
+      console.error('Error exporting to Excel:', error)
+      toast.error('Failed to export expenses')
+    }
+  }
+
   if (!currentYear) return <LoadingScreen />
 
   const getStatusBadge = (expense) => {
     const badges = []
+    
+    // Check if expense was updated (updated_at different from created_at)
+    // More lenient check - if updated_at is even 1 second different
+    const wasUpdated = expense.updated_at && expense.created_at && 
+                       expense.updated_at !== expense.created_at
+    
+    // Debug log for first few expenses
+    if (process.env.NODE_ENV === 'development' && Math.random() < 0.1) {
+      console.log('Expense update check:', {
+        id: expense.id.slice(0, 8),
+        description: expense.description?.slice(0, 30),
+        created_at: expense.created_at,
+        updated_at: expense.updated_at,
+        wasUpdated
+      })
+    }
+    
+    if (wasUpdated) {
+      badges.push(
+        <Badge key="updated" variant="warning" className="font-semibold">
+          ✏️ Updated
+        </Badge>
+      )
+    }
     
     // Fraud-proof indicators
     if (expense.is_locked) {
@@ -156,6 +198,14 @@ const ExpensesListPage = () => {
               </div>
             </div>
             <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
+              <button
+                onClick={handleExportToExcel}
+                className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 text-sm shadow-md"
+                title="Export to Excel (CA-friendly format)"
+              >
+                <span className="hidden sm:inline">📥 Download Excel</span>
+                <span className="sm:hidden">📥 Excel</span>
+              </button>
               <button
                 onClick={() => setShowGraphModal(true)}
                 className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-white/10 backdrop-blur-sm text-white border border-white/20 hover:bg-white/20 rounded-lg font-medium transition-colors duration-200 text-sm"

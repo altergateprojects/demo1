@@ -24,6 +24,7 @@ import AddStudentPage from './pages/Students/AddStudentPage'
 import EditStudentPage from './pages/Students/EditStudentPage'
 import StudentDuesPage from './pages/Students/StudentDuesPage'
 import StudentPromotionPage from './pages/Students/StudentPromotionPage'
+import PocketMoneyManagementPage from './pages/Students/PocketMoneyManagementPage'
 import AlumniPage from './pages/Students/AlumniPage'
 import TeachersListPage from './pages/Teachers/TeachersListPage'
 import TeacherDetailPage from './pages/Teachers/TeacherDetailPage'
@@ -36,6 +37,7 @@ import EditExpensePage from './pages/Expenses/EditExpensePage'
 import ExpenseAuditPage from './pages/Expenses/ExpenseAuditPage'
 import ReportsPage from './pages/Reports/ReportsPage'
 import SalaryManagementPage from './pages/Salary/SalaryManagementPage'
+import NotificationsPage from './pages/Notifications/NotificationsPage'
 
 // Create a client with balanced settings - fast for most pages, dynamic for dashboard
 const queryClient = new QueryClient({
@@ -113,6 +115,7 @@ function App() {
                       <Route path="/students/add" element={<AddStudentPage />} />
                       <Route path="/students/dues" element={<StudentDuesPage />} />
                       <Route path="/students/promotion" element={<StudentPromotionPage />} />
+                      <Route path="/students/pocket-money" element={<PocketMoneyManagementPage />} />
                       <Route path="/students/alumni" element={<AlumniPage />} />
                       <Route path="/students/:id" element={<StudentDetailPage />} />
                       <Route path="/students/:id/edit" element={<EditStudentPage />} />
@@ -137,6 +140,9 @@ function App() {
                     
                     {/* Reports routes */}
                     <Route path="/reports" element={<ReportsPage />} />
+                    
+                    {/* Notifications routes (Admin only) */}
+                    <Route path="/notifications" element={<NotificationsPage />} />
                     
                     {/* Settings routes */}
                     <Route path="/settings" element={<div>Settings - Coming Soon</div>} />

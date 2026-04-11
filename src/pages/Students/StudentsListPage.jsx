@@ -367,7 +367,7 @@ const StudentsListPage = () => {
               <Card 
                 key={student.id}
                 className="group p-5 border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-lg transition-all duration-200 cursor-pointer"
-                onClick={() => window.open(`/students/${student.id}`, '_blank')}
+                onClick={() => navigate(`/students/${student.id}`)}
               >
                 <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                   {/* Student Info */}

@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import useUIStore from '../../store/uiStore'
 import useAuthStore from '../../store/authStore'
 import { useAcademicYears } from '../../hooks/useCommon'
+import NotificationBell from '../shared/NotificationBell'
 
 const Topbar = () => {
   const { setSidebarOpen, theme, setTheme, currentAcademicYear, setCurrentAcademicYear } = useUIStore()
@@ -94,6 +95,9 @@ const Topbar = () => {
             </div>
           )}
         </div>
+
+        {/* Notification Bell (Admin only) */}
+        {profile?.role === 'admin' && <NotificationBell />}
 
         {/* Theme selector */}
         <div className="relative">

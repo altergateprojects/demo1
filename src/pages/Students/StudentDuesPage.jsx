@@ -246,7 +246,7 @@ const StudentDuesPage = () => {
               <div className="rounded-xl bg-white/10 backdrop-blur-sm p-4 border border-white/20">
                 <div className="text-purple-100 text-xs sm:text-sm font-medium">Total Pending</div>
                 <div className="mt-1 text-xl sm:text-2xl font-bold text-white">{formatINR(stats.total_pending_dues || 0)}</div>
-                <div className="mt-1 text-xs text-purple-100">{pendingDues?.length || 0} dues</div>
+                <div className="mt-1 text-xs text-purple-100">{((pendingDues?.length || 0) + (exitDues?.length || 0))} dues</div>
               </div>
               <div className="rounded-xl bg-white/10 backdrop-blur-sm p-4 border border-white/20">
                 <div className="text-purple-100 text-xs sm:text-sm font-medium">Total Cleared</div>
@@ -255,7 +255,7 @@ const StudentDuesPage = () => {
               </div>
               <div className="rounded-xl bg-white/10 backdrop-blur-sm p-4 border border-white/20">
                 <div className="text-purple-100 text-xs sm:text-sm font-medium">Fee Dues</div>
-                <div className="mt-1 text-xl sm:text-2xl font-bold text-white">{formatINR(stats.pending_fee_dues || 0)}</div>
+                <div className="mt-1 text-xl sm:text-2xl font-bold text-white">{formatINR((stats.pending_fee_dues || 0) + (stats.exit_dues_pending || 0))}</div>
               </div>
               <div className="rounded-xl bg-white/10 backdrop-blur-sm p-4 border border-white/20">
                 <div className="text-purple-100 text-xs sm:text-sm font-medium">Pocket Money Dues</div>

@@ -329,7 +329,15 @@ export const getDuesSummaryStats = async (academicYearId = null) => {
       .from('student_exit_dues')
       .select('total_due_paise, is_cleared')
 
-    if (exitError) throw exitError
+    if (exitError) {
+      console.error('❌ Error fetching exit dues:', exitError)
+      // Don't throw - continue with empty exit dues
+    }
+    
+    console.log('📊 Exit Dues Fetched:', {
+      count: exitDues?.length || 0,
+      data: exitDues
+    })
 
     // Calculate statistics
     const stats = {
@@ -380,7 +388,16 @@ export const getDuesSummaryStats = async (academicYearId = null) => {
       } else {
         stats.exit_dues_pending += exitDue.total_due_paise
         stats.total_students_with_exit_dues++
+        // ADD EXIT DUES TO TOTAL PENDING
+        stats.total_pending_dues += exitDue.total_due_paise
       }
+    })
+    
+    console.log('📊 Stats Calculated:', {
+      regular_dues_pending: stats.total_pending_dues - stats.exit_dues_pending,
+      exit_dues_pending: stats.exit_dues_pending,
+      total_pending_dues: stats.total_pending_dues,
+      total_pending_rupees: (stats.total_pending_dues / 100).toFixed(2)
     })
 
     // Get unique student counts

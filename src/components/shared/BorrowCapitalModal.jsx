@@ -17,7 +17,7 @@ const BorrowCapitalModal = ({ isOpen, onClose }) => {
   const queryClient = useQueryClient()
 
   const [formData, setFormData] = useState({
-    amount: '',
+    amount_paise: 0,
     borrowed_date: new Date().toISOString().split('T')[0],
     lender_name: '',
     lender_contact: '',
@@ -46,7 +46,7 @@ const BorrowCapitalModal = ({ isOpen, onClose }) => {
 
   const handleClose = () => {
     setFormData({
-      amount: '',
+      amount_paise: 0,
       borrowed_date: new Date().toISOString().split('T')[0],
       lender_name: '',
       lender_contact: '',
@@ -64,8 +64,8 @@ const BorrowCapitalModal = ({ isOpen, onClose }) => {
   const validate = () => {
     const newErrors = {}
 
-    if (!formData.amount || parseFloat(formData.amount) <= 0) {
-      newErrors.amount = 'Amount is required and must be greater than 0'
+    if (!formData.amount_paise || formData.amount_paise <= 0) {
+      newErrors.amount_paise = 'Amount is required and must be greater than 0'
     }
 
     if (!formData.borrowed_date) {
@@ -93,8 +93,8 @@ const BorrowCapitalModal = ({ isOpen, onClose }) => {
 
     if (!validate()) return
 
-    // Convert amount to paise using safe integer arithmetic
-    const amount_paise = rupeesToPaise(formData.amount)
+    // Amount is already in paise from CurrencyInput - no conversion needed!
+    const amount_paise = formData.amount_paise
 
     // Create data hash for fraud-proof using Web Crypto API
     const dataToHash = JSON.stringify({
@@ -156,13 +156,13 @@ const BorrowCapitalModal = ({ isOpen, onClose }) => {
               Amount (₹) *
             </label>
             <CurrencyInput
-              value={formData.amount}
-              onChange={(value) => handleChange('amount', value)}
+              value={formData.amount_paise}
+              onChange={(value) => handleChange('amount_paise', value)}
               placeholder="Enter amount"
-              error={errors.amount}
+              error={errors.amount_paise}
             />
-            {errors.amount && (
-              <p className="mt-1 text-sm text-red-600">{errors.amount}</p>
+            {errors.amount_paise && (
+              <p className="mt-1 text-sm text-red-600">{errors.amount_paise}</p>
             )}
           </div>
 

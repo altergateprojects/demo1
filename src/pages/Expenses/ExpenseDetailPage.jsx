@@ -55,6 +55,14 @@ const ExpenseDetailPage = () => {
   const getStatusBadge = () => {
     const badges = []
     
+    // Check if expense was updated
+    const wasUpdated = expense.updated_at && expense.created_at && 
+                       new Date(expense.updated_at).getTime() !== new Date(expense.created_at).getTime()
+    
+    if (wasUpdated) {
+      badges.push(<Badge key="updated" variant="warning">✏️ Updated</Badge>)
+    }
+    
     if (expense.is_locked) {
       badges.push(<Badge key="locked" variant="danger">🔒 Locked</Badge>)
     }
@@ -295,6 +303,17 @@ const ExpenseDetailPage = () => {
                   </label>
                   <p className="text-slate-900 dark:text-slate-100 font-medium">
                     {formatDate(expense.created_at)}
+                  </p>
+                </div>
+              )}
+              {expense.updated_at && expense.created_at && 
+               new Date(expense.updated_at).getTime() !== new Date(expense.created_at).getTime() && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    Last Updated
+                  </label>
+                  <p className="text-orange-600 dark:text-orange-400 font-medium">
+                    ✏️ {formatDate(expense.updated_at)}
                   </p>
                 </div>
               )}

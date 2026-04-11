@@ -6,15 +6,41 @@ import { useRecordPocketMoneyTransaction } from '../../hooks/usePocketMoney'
 import { formatINR } from '../../lib/formatters'
 import Modal from '../ui/Modal'
 import Input from '../ui/Input'
+import Select from '../ui/Select'
 import CurrencyInput from '../ui/CurrencyInput'
 import Button from '../ui/Button'
+
+// Predefined debit categories
+const DEBIT_CATEGORIES = [
+  { value: 'health', label: 'Health' },
+  { value: 'forms', label: 'Forms' },
+  { value: 'sports', label: 'Sports' },
+  { value: 'haircut', label: 'Hair Cut' },
+  { value: 'festival', label: 'Festival Fee' },
+  { value: 'stationery', label: 'Stationery' },
+  { value: 'uniform', label: 'Uniform' },
+  { value: 'books', label: 'Books' },
+  { value: 'transport', label: 'Transport' },
+  { value: 'food', label: 'Food/Lunch' },
+  { value: 'other', label: 'Other' }
+]
 
 const pocketMoneySchema = z.object({
   amount_paise: z.number().min(100, 'Minimum amount is ₹1'),
   transaction_type: z.enum(['credit', 'debit']),
+  debit_category: z.string().optional(),
   description: z.string().optional(),
   notes: z.string().optional(),
   transaction_date: z.string().optional()
+}).refine((data) => {
+  // If debit and category is "other", notes must be provided
+  if (data.transaction_type === 'debit' && data.debit_category === 'other') {
+    return data.notes && data.notes.trim().length > 0
+  }
+  return true
+}, {
+  message: 'Notes are required when "Other" category is selected',
+  path: ['notes']
 })
 
 const PocketMoneyModal = ({ 
@@ -37,20 +63,39 @@ const PocketMoneyModal = ({
     defaultValues: {
       transaction_type: type,
       amount_paise: 0,
-      description: type === 'credit' ? 'Pocket money credit' : 'Pocket money debit',
+      debit_category: '',
+      description: type === 'credit' ? 'Pocket money credit' : '',
       transaction_date: new Date().toISOString().split('T')[0]
     }
   })
 
   const watchedAmount = watch('amount_paise')
   const transactionType = watch('transaction_type')
+  const debitCategory = watch('debit_category')
 
   const onSubmit = async (data) => {
     try {
-      await recordTransactionMutation.mutateAsync({
-        ...data,
+      // Build description from category if debit
+      let finalDescription = data.description
+      if (data.transaction_type === 'debit' && data.debit_category) {
+        const category = DEBIT_CATEGORIES.find(c => c.value === data.debit_category)
+        finalDescription = category ? category.label : data.description
+      }
+
+      // Remove debit_category before sending to API (it's not a database column)
+      const { debit_category, ...transactionData } = data
+
+      // Build clean transaction object without debit_category
+      const cleanTransaction = {
+        amount_paise: transactionData.amount_paise,
+        transaction_type: transactionData.transaction_type,
+        description: finalDescription,
+        notes: transactionData.notes,
+        transaction_date: transactionData.transaction_date,
         student_id: student.id
-      })
+      }
+
+      await recordTransactionMutation.mutateAsync(cleanTransaction)
       reset()
       onClose()
     } catch (error) {
@@ -133,25 +178,53 @@ const PocketMoneyModal = ({
           error={errors.transaction_date?.message}
         />
 
+        {/* Debit Category (only for debit transactions) */}
+        {transactionType === 'debit' && (
+          <Select
+            label="Category"
+            required
+            placeholder="Select debit category"
+            options={DEBIT_CATEGORIES}
+            {...register('debit_category')}
+            error={errors.debit_category?.message}
+          />
+        )}
+
         {/* Description */}
         <Input
-          label="Description (Optional)"
-          placeholder={transactionType === 'credit' ? 'e.g., Monthly allowance' : 'e.g., Lunch purchase'}
+          label={transactionType === 'debit' ? 'Additional Description (Optional)' : 'Description (Optional)'}
+          placeholder={transactionType === 'credit' ? 'e.g., Monthly allowance' : 'e.g., Additional details'}
           {...register('description')}
           error={errors.description?.message}
         />
 
-        {/* Notes */}
+        {/* Notes - Required when "Other" is selected */}
         <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-            Notes (Optional)
+            Notes {transactionType === 'debit' && debitCategory === 'other' && (
+              <span className="text-red-500">*</span>
+            )}
           </label>
           <textarea
             rows={3}
-            className="input-field"
-            placeholder="Any additional notes about this transaction"
+            className={`input-field ${errors.notes ? 'border-red-300 dark:border-red-600' : ''}`}
+            placeholder={
+              transactionType === 'debit' && debitCategory === 'other'
+                ? 'Please specify the reason for debit (required)'
+                : 'Any additional notes about this transaction'
+            }
             {...register('notes')}
           />
+          {errors.notes && (
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+              {errors.notes.message}
+            </p>
+          )}
+          {transactionType === 'debit' && debitCategory === 'other' && (
+            <p className="mt-1 text-sm text-orange-600 dark:text-orange-400">
+              Notes are required when "Other" category is selected
+            </p>
+          )}
         </div>
 
         {/* Overdraft Warning */}
